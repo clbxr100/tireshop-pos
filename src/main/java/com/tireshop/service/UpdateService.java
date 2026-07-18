@@ -349,8 +349,9 @@ public class UpdateService {
         restartCmd = restartCmd.replace("{JAR}", jar.toString());
 
         Path script = appDir.resolve(APPLY_SCRIPT);
+        String workDir = System.getProperty("user.dir"); // restart with the same CWD so the app finds its config/database
         String scriptContent = buildApplyScript(jar, downloadedJar.toAbsolutePath(), backup,
-                appDir.resolve(FLAG_FILE), restartCmd);
+                appDir.resolve(FLAG_FILE), restartCmd, workDir);
         Files.write(script, scriptContent.getBytes("UTF-8"));
 
         // 3. Launch the script detached, then the caller exits the app
@@ -395,7 +396,7 @@ public class UpdateService {
      * Batch script: wait for app exit -> swap JAR -> restart -> if the app does not
      * confirm a successful start within 90 seconds, restore the backup and restart it.
      */
-    private String buildApplyScript(Path jar, Path newJar, Path backup, Path flagFile, String restartCmd) {
+    private String buildApplyScript(Path jar, Path newJar, Path backup, Path flagFile, String restartCmd, String workDir) {
         StringBuilder sb = new StringBuilder();
         sb.append("@echo off\r\n");
         sb.append("setlocal\r\n");
@@ -403,6 +404,9 @@ public class UpdateService {
         sb.append("set \"NEW=").append(newJar).append("\"\r\n");
         sb.append("set \"BACKUP=").append(backup).append("\"\r\n");
         sb.append("set \"FLAG=").append(flagFile).append("\"\r\n");
+        // The app keeps config.properties and the H2 database in its working directory.
+        // This script runs from the app folder, so restore the original CWD before restart.
+        sb.append("set \"WORKDIR=").append(workDir).append("\"\r\n");
         sb.append("echo Applying Tire Shop POS update...\r\n");
         // Wait for the application to close
         sb.append("timeout /t 4 /nobreak >nul\r\n");
@@ -418,6 +422,7 @@ public class UpdateService {
         sb.append(")\r\n");
         // Mark update in progress and start the new version
         sb.append("echo updating > \"%FLAG%\"\r\n");
+        sb.append("cd /d \"%WORKDIR%\"\r\n");
         sb.append(restartCmd).append("\r\n");
         // Wait for the app to confirm startup by deleting the flag (done in Main.start)
         sb.append("set /a waits=0\r\n");
@@ -438,6 +443,7 @@ public class UpdateService {
         sb.append("echo Update failed - restoring previous version...\r\n");
         sb.append("copy /y \"%BACKUP%\" \"%JAR%\" >nul\r\n");
         sb.append("del \"%FLAG%\" >nul 2>&1\r\n");
+        sb.append("cd /d \"%WORKDIR%\"\r\n");
         sb.append(restartCmd).append("\r\n");
         sb.append("echo Previous version restored.\r\n");
         sb.append("timeout /t 5 >nul\r\n");
