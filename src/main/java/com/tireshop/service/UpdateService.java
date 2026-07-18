@@ -342,9 +342,9 @@ public class UpdateService {
         LOGGER.info("Current version backed up to: " + backup);
 
         // 2. Write the helper script
-        String restartCmd = settingsService.getSetting(KEY_RESTART_CMD, DEFAULT_RESTART_CMD);
-        if (restartCmd.trim().isEmpty()) {
-            restartCmd = DEFAULT_RESTART_CMD;
+        String restartCmd = settingsService.getSetting(KEY_RESTART_CMD, "").trim();
+        if (restartCmd.isEmpty()) {
+            restartCmd = detectRestartCommand(jar);
         }
         restartCmd = restartCmd.replace("{JAR}", jar.toString());
 
@@ -361,6 +361,34 @@ public class UpdateService {
 
         LOGGER.info("Update script launched. Application should now close to complete the update.");
         return backup;
+    }
+
+    /**
+     * Work out how to relaunch the app after an update. When running from a
+     * jpackage app-image the jar lives at <install>\app\*.jar with the launcher
+     * exe one level up - prefer that exe (it uses the bundled runtime, so no
+     * system Java is needed). Fall back to "javaw -jar" otherwise.
+     */
+    private String detectRestartCommand(Path jar) {
+        try {
+            Path appDir = jar.getParent();
+            Path installRoot = appDir != null ? appDir.getParent() : null;
+            if (installRoot != null && Files.isDirectory(installRoot)) {
+                try (java.util.stream.Stream<Path> stream = Files.list(installRoot)) {
+                    java.util.Optional<Path> exe = stream
+                            .filter(p -> p.getFileName() != null
+                                    && p.getFileName().toString().toLowerCase().endsWith(".exe"))
+                            .findFirst();
+                    if (exe.isPresent()) {
+                        LOGGER.info("Restarting via launcher exe: " + exe.get());
+                        return "start \"\" \"" + exe.get().toString() + "\"";
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warning("Could not auto-detect launcher exe, using javaw fallback: " + e.getMessage());
+        }
+        return DEFAULT_RESTART_CMD;
     }
 
     /**
