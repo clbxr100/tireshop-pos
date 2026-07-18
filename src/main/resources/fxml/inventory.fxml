@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.tireshop.controller.InventoryController"
+            minHeight="400.0" minWidth="800.0">
+    
+    <top>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            
+            <!-- Search and Filter Controls -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="searchField" promptText="Search tires..." HBox.hgrow="ALWAYS" maxWidth="300"/>
+                
+                <Label text="Sort by:"/>
+                <ComboBox fx:id="sortByComboBox" maxWidth="150" minWidth="120"/>
+                <CheckBox fx:id="ascendingCheckBox" text="Ascending" selected="true"/>
+                
+                <Label text="Filter:"/>
+                <ComboBox fx:id="filterByComboBox" maxWidth="150" minWidth="120"/>
+                
+                <Button text="Compare Selected" onAction="#compareSelectedTires"/>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <center>
+        <SplitPane dividerPositions="0.65" SplitPane.resizableWithParent="true">
+            <!-- Product Table -->
+            <TableView fx:id="productTable" VBox.vgrow="ALWAYS" minWidth="400">
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                </columnResizePolicy>
+            </TableView>
+            
+            <!-- Details Pane -->
+            <ScrollPane fitToWidth="true" minWidth="250">
+                <VBox fx:id="detailsPane" spacing="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
+                    
+                    <!-- Tire Image -->
+                    <ImageView fx:id="tireImageView" fitWidth="150" fitHeight="150" preserveRatio="true"/>
+                    
+                    <!-- Tire Details -->
+                    <GridPane vgap="5" hgap="10">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="NEVER" minWidth="70"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        
+                        <Label text="Name:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <Label fx:id="nameLabel" GridPane.columnIndex="1" GridPane.rowIndex="0" wrapText="true"/>
+                        
+                        <Label text="Manufacturer:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                        <Label fx:id="manufacturerLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" wrapText="true"/>
+                        
+                        <Label text="Size:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                        <Label fx:id="sizeLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" wrapText="true"/>
+                        
+                        <Label text="Type:" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                        <Label fx:id="typeLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" wrapText="true"/>
+                        
+                        <Label text="Speed Rating:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                        <Label fx:id="speedRatingLabel" GridPane.columnIndex="1" GridPane.rowIndex="4" wrapText="true"/>
+                        
+                        <Label text="Load Rating:" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                        <Label fx:id="loadRatingLabel" GridPane.columnIndex="1" GridPane.rowIndex="5" wrapText="true"/>
+                        
+                        <Label text="UTQG Treadwear:" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+                        <Label fx:id="treadwearLabel" GridPane.columnIndex="1" GridPane.rowIndex="6" wrapText="true"/>
+                        
+                        <Label text="UTQG Traction:" GridPane.columnIndex="0" GridPane.rowIndex="7"/>
+                        <Label fx:id="tractionLabel" GridPane.columnIndex="1" GridPane.rowIndex="7" wrapText="true"/>
+                        
+                        <Label text="UTQG Temperature:" GridPane.columnIndex="0" GridPane.rowIndex="8"/>
+                        <Label fx:id="temperatureLabel" GridPane.columnIndex="1" GridPane.rowIndex="8" wrapText="true"/>
+                        
+                        <Label text="Run Flat:" GridPane.columnIndex="0" GridPane.rowIndex="9"/>
+                        <Label fx:id="runFlatLabel" GridPane.columnIndex="1" GridPane.rowIndex="9" wrapText="true"/>
+                        
+                        <Label text="Warranty:" GridPane.columnIndex="0" GridPane.rowIndex="10"/>
+                        <Label fx:id="warrantyLabel" GridPane.columnIndex="1" GridPane.rowIndex="10" wrapText="true"/>
+                        
+                        <Label text="Price:" GridPane.columnIndex="0" GridPane.rowIndex="11"/>
+                        <Label fx:id="priceLabel" GridPane.columnIndex="1" GridPane.rowIndex="11" wrapText="true"/>
+                        
+                        <Label text="Stock:" GridPane.columnIndex="0" GridPane.rowIndex="12"/>
+                        <Label fx:id="stockLabel" GridPane.columnIndex="1" GridPane.rowIndex="12" wrapText="true"/>
+                    </GridPane>
+                </VBox>
+            </ScrollPane>
+        </SplitPane>
+    </center>
+    
+</BorderPane> 

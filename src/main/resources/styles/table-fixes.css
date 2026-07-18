@@ -1,0 +1,170 @@
+/* Table Text Fixes - Consolidated Styles */
+/* This file fixes text display issues in TableViews by providing clear, non-conflicting styles */
+
+/* ===== BASE TABLE STYLES ===== */
+.table-view {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 4px;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 4px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 2);
+    -fx-table-cell-border-color: #e0e0e0;
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* ===== TABLE HEADER STYLING ===== */
+.table-view .column-header-background {
+    -fx-background-color: #f8f9fa;
+    -fx-padding: 8px 0;
+}
+
+.table-view .column-header,
+.table-view .column-header .label {
+    -fx-background-color: transparent;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-text-fill: #333333;
+    -fx-border-color: transparent transparent #e0e0e0 transparent;
+    -fx-padding: 6px 8px;
+}
+
+/* ===== TABLE CELL STYLING ===== */
+.table-view .table-cell {
+    -fx-text-fill: #333333;
+    -fx-background-color: transparent;
+    -fx-font-size: 11px;
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-padding: 4px 8px;
+    -fx-border-color: transparent;
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* ===== TABLE ROW STYLING ===== */
+.table-view .table-row-cell {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent;
+    -fx-table-cell-border-color: #f0f0f0;
+    -fx-padding: 2px 0;
+    -fx-font-size: 11px;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #fafafa;
+}
+
+.table-view .table-row-cell:hover {
+    -fx-background-color: #e3f2fd;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #2196f3;
+    -fx-text-fill: white;
+}
+
+.table-view .table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
+    -fx-background-color: transparent;
+}
+
+/* ===== DARK THEME TABLE OVERRIDES ===== */
+.dark-theme .table-view {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-table-cell-border-color: #404040;
+}
+
+.dark-theme .table-view .column-header-background {
+    -fx-background-color: #353535;
+}
+
+.dark-theme .table-view .column-header,
+.dark-theme .table-view .column-header .label {
+    -fx-text-fill: #ffffff;
+    -fx-border-color: transparent transparent #404040 transparent;
+}
+
+.dark-theme .table-view .table-cell {
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .table-view .table-row-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-table-cell-border-color: #404040;
+}
+
+.dark-theme .table-view .table-row-cell:odd {
+    -fx-background-color: #323232;
+}
+
+.dark-theme .table-view .table-row-cell:hover {
+    -fx-background-color: #404040;
+}
+
+.dark-theme .table-view .table-row-cell:selected {
+    -fx-background-color: #1976d2;
+    -fx-text-fill: white;
+}
+
+.dark-theme .table-view .table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
+}
+
+/* ===== SIMPLE RESPONSIVE ADJUSTMENTS ===== */
+/* Only apply simple scaling based on actual window size, not complex class combinations */
+
+/* For very small windows (< 1000px width) */
+@media (max-width: 1000px) {
+    .table-view .table-cell {
+        -fx-font-size: 10px;
+        -fx-padding: 3px 6px;
+    }
+    
+    .table-view .column-header,
+    .table-view .column-header .label {
+        -fx-font-size: 11px;
+        -fx-padding: 5px 6px;
+    }
+}
+
+/* For large windows (> 1600px width) */
+@media (min-width: 1600px) {
+    .table-view .table-cell {
+        -fx-font-size: 12px;
+        -fx-padding: 5px 10px;
+    }
+    
+    .table-view .column-header,
+    .table-view .column-header .label {
+        -fx-font-size: 13px;
+        -fx-padding: 7px 10px;
+    }
+}
+
+/* ===== SPECIFIC TABLE TYPES ===== */
+.sales-table .table-cell {
+    -fx-font-size: 11px;
+}
+
+.inventory-table .table-cell {
+    -fx-font-size: 11px;
+}
+
+.report-table .table-cell {
+    -fx-font-size: 10px;
+}
+
+/* ===== OVERRIDE ANY CONFLICTING STYLES ===== */
+/* Force consistent text rendering in tables */
+.table-view .table-cell,
+.table-view .table-row-cell .table-cell,
+.table-view .table-row-cell:selected .table-cell,
+.table-view .table-row-cell:hover .table-cell {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif !important;
+    -fx-font-weight: normal !important;
+}
+
+.table-view .column-header .label,
+.table-view .column-header {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif !important;
+    -fx-font-weight: bold !important;
+} 

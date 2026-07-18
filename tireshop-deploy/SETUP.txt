@@ -1,0 +1,14 @@
+# Tire Shop POS - Quick Setup Guide 
+ 
+1. Installation Requirements: 
+   - Java 11 or higher must be installed on each PC 
+ 
+2. To install on a single PC: 
+   - Run install-tireshop.bat 
+ 
+3. To set up multiple PCs with a shared database: 
+   - First install on each PC using install-tireshop.bat 
+   - Then run setup-shared-db.bat on each PC 
+   - When prompted, enter the same shared network path on all PCs 
+ 
+4. For detailed instructions, see README.md 

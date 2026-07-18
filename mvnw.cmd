@@ -1,0 +1,3 @@
+@echo off 
+echo Running with Maven Wrapper... 
+java -jar .mvn\wrapper\maven-wrapper.jar %* 

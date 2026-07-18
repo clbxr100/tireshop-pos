@@ -1,0 +1,45 @@
+# ---- Build output ----
+target/
+build-temp/
+temp/
+temp-classes/
+*.class
+dependency-reduced-pom.xml
+
+# ---- Bundled tools (downloaded, not source) ----
+jdk-*/
+apache-maven-*/
+java-installer.msi
+*.zip
+
+# ---- Runtime / local data (never commit) ----
+*.mv.db
+*.trace.db
+*.lock.db
+pos-running.lock
+barcode_cache.dat
+/config.properties
+/database.properties
+/backups/
+/tire_data/
+nul
+/enable-print-server.txt
+receipts/
+
+# ---- Deployment artifacts ----
+/deployment/
+/update-server/
+/tireshop-deploy/lib/
+
+# ---- Node ----
+node_modules/
+
+# ---- IDE / tooling ----
+.idea/
+.vscode/
+*.iml
+.claude/
+
+# ---- OS ----
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,330 @@
+/* Sales Screen Specific Styling - Responsive Edition */
+
+/* Sales table */
+.sales-table {
+    -fx-background-color: white;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 0.25em;
+}
+
+.sales-table .column-header {
+    -fx-background-color: #f8f9fa;
+    -fx-padding: 0.5em;
+    -fx-font-weight: bold;
+    -fx-font-size: 0.9em;
+}
+
+.small-screen .sales-table .column-header {
+    -fx-padding: 0.4em;
+    -fx-font-size: 0.8em;
+}
+
+.sales-table .table-row-cell:selected {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #333333;
+}
+
+.sales-table .table-row-cell {
+    -fx-font-size: 0.95em;
+}
+
+.small-screen .sales-table .table-row-cell {
+    -fx-font-size: 0.85em;
+}
+
+/* Status indicators in sales table */
+.status-cell.paid {
+    -fx-text-fill: #4caf50;
+    -fx-font-weight: bold;
+}
+
+.status-cell.pending {
+    -fx-text-fill: #f39c12;
+    -fx-font-weight: bold;
+}
+
+/* Sale details section */
+.sale-details-pane {
+    -fx-background-color: white;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 0.25em;
+    -fx-padding: 1em;
+}
+
+.small-screen .sale-details-pane {
+    -fx-padding: 0.75em;
+}
+
+.sale-details-pane .title {
+    -fx-font-size: 1.1em;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 0.6em 0;
+}
+
+.small-screen .sale-details-pane .title {
+    -fx-font-size: 1em;
+    -fx-padding: 0 0 0.5em 0;
+}
+
+/* Customer info section */
+.customer-info {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 0.25em;
+    -fx-padding: 0.6em;
+}
+
+.small-screen .customer-info {
+    -fx-padding: 0.5em;
+}
+
+.customer-info .label {
+    -fx-text-fill: #555555;
+    -fx-font-size: 0.9em;
+}
+
+.small-screen .customer-info .label {
+    -fx-font-size: 0.8em;
+}
+
+.customer-info .value {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-font-size: 0.95em;
+}
+
+.small-screen .customer-info .value {
+    -fx-font-size: 0.85em;
+}
+
+/* Enhanced Button Group Styling */
+.button-group-label {
+    -fx-font-size: 0.8em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #666666;
+    -fx-padding: 0 0 0.3em 0;
+}
+
+/* Quick Filter Buttons */
+.quick-filter {
+    -fx-min-width: 70px;
+    -fx-font-size: 0.85em;
+    -fx-padding: 0.4em 0.6em;
+}
+
+.quick-filter:hover {
+    -fx-background-color: #e3f2fd;
+    -fx-border-color: #2196f3;
+}
+
+/* Status Bar Styling */
+.status-bar {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 0.25em;
+    -fx-padding: 0.5em 0.8em;
+    -fx-border-width: 1px;
+}
+
+.status-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-font-size: 0.9em;
+}
+
+.count-label {
+    -fx-text-fill: #666666;
+    -fx-font-size: 0.85em;
+    -fx-font-style: italic;
+}
+
+/* Enhanced Search Field */
+.text-field:focused {
+    -fx-border-color: #2196f3;
+    -fx-border-width: 2px;
+    -fx-background-color: white;
+}
+
+/* Date Picker Styling */
+.date-picker {
+    -fx-background-color: white;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 0.25em;
+}
+
+.date-picker:focused {
+    -fx-border-color: #2196f3;
+    -fx-border-width: 2px;
+}
+
+/* Button Hover Effects */
+.button:hover {
+    -fx-opacity: 0.9;
+    -fx-cursor: hand;
+}
+
+.primary:hover {
+    -fx-background-color: #1976d2;
+}
+
+.secondary:hover {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #bdbdbd;
+}
+
+.complete-sale-button:hover {
+    -fx-background-color: #388e3c;
+}
+
+.cancel-sale-button:hover {
+    -fx-background-color: #d32f2f;
+}
+
+.print-button:hover {
+    -fx-background-color: #f57c00;
+}
+
+/* Separator Styling */
+.separator:vertical .line {
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 0 1px;
+}
+
+/* Responsive adjustments for smaller screens */
+.small-screen .button-group-label {
+    -fx-font-size: 0.75em;
+}
+
+.small-screen .quick-filter {
+    -fx-min-width: 60px;
+    -fx-font-size: 0.8em;
+    -fx-padding: 0.3em 0.5em;
+}
+
+.small-screen .status-label {
+    -fx-font-size: 0.85em;
+}
+
+.small-screen .count-label {
+    -fx-font-size: 0.8em;
+}
+
+/* Enhanced Container Spacing */
+.spacing-10 > * {
+    -fx-margin: 0 5px;
+}
+
+/* Professional Card-like Appearance for Controls */
+.sales-controls-container {
+    -fx-background-color: white;
+    -fx-background-radius: 0.4em;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 0.4em;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 4, 0.5, 0, 1);
+    -fx-padding: 1em;
+    -fx-margin: 0.5em;
+}
+
+/* Transaction summary */
+.transaction-summary {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 0.25em;
+    -fx-padding: 0.6em;
+}
+
+.small-screen .transaction-summary {
+    -fx-padding: 0.5em;
+}
+
+.transaction-summary .label {
+    -fx-text-fill: #555555;
+    -fx-font-size: 0.9em;
+}
+
+.small-screen .transaction-summary .label {
+    -fx-font-size: 0.8em;
+}
+
+.transaction-summary .subtotal {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-font-size: 0.95em;
+}
+
+.small-screen .transaction-summary .subtotal {
+    -fx-font-size: 0.85em;
+}
+
+.transaction-summary .tax {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-font-size: 0.95em;
+}
+
+.small-screen .transaction-summary .tax {
+    -fx-font-size: 0.85em;
+}
+
+.transaction-summary .total {
+    -fx-font-size: 1.1em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.small-screen .transaction-summary .total {
+    -fx-font-size: 1em;
+}
+
+/* Product/Service selection */
+.product-selection {
+    -fx-background-color: white;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 0.25em;
+    -fx-padding: 0.6em;
+}
+
+.small-screen .product-selection {
+    -fx-padding: 0.5em;
+}
+
+.product-selection .title {
+    -fx-font-size: 1em;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 0.6em 0;
+}
+
+.small-screen .product-selection .title {
+    -fx-font-size: 0.9em;
+    -fx-padding: 0 0 0.5em 0;
+}
+
+/* Payment method styling */
+.payment-method {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 0.25em;
+    -fx-padding: 0.6em;
+}
+
+.small-screen .payment-method {
+    -fx-padding: 0.5em;
+}
+
+.payment-method .title {
+    -fx-font-size: 1em;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 0.6em 0;
+}
+
+.small-screen .payment-method .title {
+    -fx-font-size: 0.9em;
+    -fx-padding: 0 0 0.5em 0;
+} 

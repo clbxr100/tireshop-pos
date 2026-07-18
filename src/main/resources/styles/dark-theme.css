@@ -1,0 +1,2883 @@
+/* Dark Theme for Tire Shop POS */
+
+/* ===== BASE STYLES (when dark-theme.css is loaded standalone) ===== */
+.root {
+    -fx-background-color: #1e1e1e;
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 1em;
+    -fx-text-fill: #e0e0e0;
+}
+
+/* Base table styling */
+.table-view {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #404040;
+    -fx-border-radius: 0.25em;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-table-cell-border-color: #404040;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #e0e0e0;
+    -fx-background-color: transparent;
+    -fx-padding: 0.6em 0.8em;
+    -fx-border-color: transparent;
+    -fx-font-size: 0.95em;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: transparent;
+    -fx-table-cell-border-color: #404040;
+    -fx-text-fill: #e0e0e0;
+    -fx-padding: 0.2em 0;
+    -fx-font-size: 0.95em;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #323232;
+    -fx-text-fill: #e0e0e0;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #1976d2;
+    -fx-text-fill: white;
+}
+
+.table-view .table-row-cell:hover {
+    -fx-background-color: #404040;
+    -fx-text-fill: #f0f0f0;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #353535;
+    -fx-padding: 0.3em 0;
+    -fx-border-color: transparent transparent #404040 transparent;
+}
+
+.table-view .column-header,
+.table-view .column-header .label {
+    -fx-background-color: transparent;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent #404040 #404040 transparent;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 0.9em;
+    -fx-padding: 0.4em;
+}
+
+/* Base button styling */
+.button {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 2, 0, 0, 1);
+    -fx-font-weight: 500;
+    -fx-padding: 0.4em 0.8em;
+    -fx-min-height: 2.2em;
+    -fx-min-width: 4em;
+}
+
+.button:hover {
+    -fx-background-color: #3a75ff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 4, 0, 0, 2);
+}
+
+/* Base form controls */
+.text-field, 
+.text-area, 
+.combo-box-base,
+.choice-box {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+    -fx-border-radius: 0.25em;
+    -fx-background-radius: 0.25em;
+    -fx-padding: 0.4em 0.6em;
+    -fx-text-fill: #e0e0e0;
+    -fx-prompt-text-fill: #888888;
+    -fx-font-size: 0.95em;
+    -fx-min-height: 2.2em;
+}
+
+.text-field:focused, 
+.text-area:focused, 
+.combo-box-base:focused,
+.choice-box:focused {
+    -fx-border-color: #4c84ff;
+    -fx-background-color: #353535;
+    -fx-effect: dropshadow(gaussian, rgba(76, 132, 255, 0.4), 3, 0, 0, 0);
+}
+
+/* Base label styling */
+.label {
+    -fx-text-fill: #e0e0e0;
+    -fx-padding: 0.25em 0;
+    -fx-font-size: 1em;
+}
+
+/* Base tab styling */
+.tab-pane {
+    -fx-tab-min-width: 6em;
+    -fx-padding: 0.25em;
+    -fx-background-color: #1e1e1e;
+}
+
+.tab {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0.25em 0.25em 0 0;
+    -fx-padding: 0.4em 0.6em;
+    -fx-text-fill: #b0b0b0;
+    -fx-font-size: 0.95em;
+    -fx-min-width: 4em;
+    -fx-font-weight: 500;
+}
+
+.tab:selected {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: #404040 #404040 #353535 #404040;
+    -fx-border-radius: 0.25em 0.25em 0 0;
+    -fx-text-fill: #4c84ff;
+    -fx-font-weight: 600;
+}
+
+/* Base list styling */
+.list-view {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.list-cell {
+    -fx-text-fill: #e0e0e0;
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 0.5em;
+}
+
+.list-cell:hover {
+    -fx-background-color: #404040;
+}
+
+.list-cell:selected {
+    -fx-background-color: #1976d2;
+    -fx-text-fill: white;
+}
+
+/* ===== ORIGINAL DARK THEME STYLES (with .dark-theme prefix for compatibility) ===== */
+
+.root.dark-theme {
+    -fx-background-color: #1e1e1e;
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 1em;
+    -fx-text-fill: #e0e0e0;
+}
+
+/* ===== DYNAMIC RESPONSIVE FONT SCALING ===== */
+/* Small screens (< 1366px width) */
+.root.dark-theme.small-screen {
+    -fx-font-size: 0.85em;
+}
+
+/* Medium screens (1366px - 1599px) */
+.root.dark-theme.medium-screen {
+    -fx-font-size: 0.95em;
+}
+
+/* Large screens (1600px - 1919px) */
+.root.dark-theme.large-screen {
+    -fx-font-size: 1.1em;
+}
+
+/* Extra large screens (1920px - 2559px) */
+.root.dark-theme.extra-large-screen {
+    -fx-font-size: 1.2em;
+}
+
+/* Ultra-wide screens (2560px+) */
+.root.dark-theme.ultra-wide-screen {
+    -fx-font-size: 1.35em;
+}
+
+/* High DPI scaling adjustments */
+.root.dark-theme.high-dpi {
+    -fx-font-size: 1.15em;
+}
+
+.root.dark-theme.ultra-high-dpi {
+    -fx-font-size: 1.3em;
+}
+
+/* ===== BUTTONS (Dark Theme) ===== */
+.dark-theme .button {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white !important;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 2, 0, 0, 1);
+    -fx-font-weight: 500;
+    -fx-padding: 0.4em 0.8em;
+    -fx-min-height: 2.2em;
+    -fx-min-width: 4em;
+}
+
+.dark-theme .button:hover {
+    -fx-background-color: #3a75ff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 4, 0, 0, 2);
+}
+
+.dark-theme .button:pressed {
+    -fx-background-color: #2a65ff;
+}
+
+.dark-theme .button.primary {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+}
+
+.dark-theme .button.success {
+    -fx-background-color: #4caf50;
+    -fx-text-fill: white;
+}
+
+.dark-theme .button.warning {
+    -fx-background-color: #ff9800;
+    -fx-text-fill: white;
+}
+
+.dark-theme .button.secondary {
+    -fx-background-color: #6c757d;
+    -fx-text-fill: white !important;
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+}
+
+.dark-theme .button.secondary:hover {
+    -fx-background-color: #5a6268;
+}
+
+/* ===== TABLES (Dark Theme) ===== */
+.dark-theme .table-view {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0.25em;
+    -fx-border-color: #404040;
+    -fx-border-radius: 0.25em;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-table-cell-border-color: #404040;
+}
+
+.dark-theme .table-view .filler {
+    -fx-background-color: #353535;
+}
+
+.dark-theme .table-view .corner {
+    -fx-background-color: #353535;
+}
+
+.dark-theme .table-view .column-header-background {
+    -fx-background-color: #353535;
+    -fx-padding: 0.3em 0;
+    -fx-border-color: transparent transparent #404040 transparent;
+}
+
+.dark-theme .table-view .column-header,
+.dark-theme .table-view .column-header .label {
+    -fx-background-color: transparent;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent #404040 #404040 transparent;
+    -fx-text-fill: #ffffff !important;
+    -fx-font-size: 0.9em;
+    -fx-padding: 0.4em;
+}
+
+.dark-theme .table-view .table-row-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: transparent;
+    -fx-table-cell-border-color: #404040;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-padding: 0.2em 0;
+    -fx-font-size: 0.95em;
+}
+
+.dark-theme .table-view .table-row-cell:odd {
+    -fx-background-color: #323232;
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+.dark-theme .table-view .table-row-cell:selected {
+    -fx-background-color: #1976d2 !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .table-view .table-row-cell:selected:odd {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .table-view .table-row-cell:hover {
+    -fx-background-color: #404040 !important;
+    -fx-text-fill: #f0f0f0 !important;
+}
+
+.dark-theme .table-view .table-cell {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-background-color: transparent;
+    -fx-padding: 0.3em 0.5em;
+    -fx-border-color: transparent;
+    -fx-font-size: 0.95em;
+}
+
+.dark-theme .table-view .table-cell:selected {
+    -fx-text-fill: white !important;
+    -fx-background-color: transparent !important;
+}
+
+/* Focused table row styling */
+.dark-theme .table-view:focused .table-row-cell:selected {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .table-view:focused .table-row-cell:selected .table-cell {
+    -fx-text-fill: white !important;
+}
+
+/* ===== TABS (Dark Theme) ===== */
+.dark-theme .tab-pane {
+    -fx-tab-min-width: 6em;
+    -fx-padding: 0.25em;
+    -fx-background-color: #1e1e1e;
+}
+
+.dark-theme .tab-pane .tab-header-area {
+    -fx-padding: 0.3em 0 0 0;
+    -fx-background-color: #1e1e1e;
+}
+
+.dark-theme .tab {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0.25em 0.25em 0 0;
+    -fx-padding: 0.4em 0.6em;
+    -fx-text-fill: #b0b0b0 !important;
+    -fx-font-size: 0.95em;
+    -fx-min-width: 4em;
+    -fx-font-weight: 500;
+}
+
+.dark-theme .tab:selected {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: #404040 #404040 #353535 #404040;
+    -fx-border-radius: 0.25em 0.25em 0 0;
+    -fx-text-fill: #4c84ff !important;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .tab-pane .tab-content-area {
+    -fx-background-color: #353535;
+    -fx-border-color: #404040;
+    -fx-border-radius: 0 0.25em 0.25em 0.25em;
+}
+
+/* ===== DIALOGS & PANES (Dark Theme) ===== */
+.dark-theme .dialog-pane {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040;
+    -fx-border-radius: 0.5em;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 0, 5);
+    -fx-padding: 1em;
+}
+
+.dark-theme .dialog-pane .header-panel {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+    -fx-padding: 1em;
+}
+
+.dark-theme .dialog-pane .header-panel .label {
+    -fx-text-fill: white !important;
+    -fx-font-size: 1.1em;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .titled-pane {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-border-color: #404040;
+    -fx-border-radius: 0.25em;
+}
+
+.dark-theme .titled-pane .title {
+    -fx-background-color: #353535;
+    -fx-border-color: #404040;
+    -fx-font-weight: 600;
+    -fx-padding: 0.6em;
+    -fx-text-fill: #ffffff !important;
+    -fx-font-size: 0.95em;
+}
+
+.dark-theme .titled-pane .content {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-width: 0 1px 1px 1px;
+    -fx-padding: 0.6em;
+}
+
+.dark-theme .dialog-pane .content {
+    -fx-background-color: #2d2d2d !important;
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+.dark-theme .dialog-pane .button-bar {
+    -fx-background-color: #2d2d2d !important;
+    -fx-padding: 1em;
+}
+
+/* ===== FORM CONTROLS (Dark Theme) ===== */
+.dark-theme .text-field, 
+.dark-theme .text-area, 
+.dark-theme .combo-box-base,
+.dark-theme .choice-box {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #555555 !important;
+    -fx-border-radius: 0.25em;
+    -fx-background-radius: 0.25em;
+    -fx-padding: 0.4em 0.6em;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-prompt-text-fill: #888888;
+    -fx-font-size: 0.95em;
+    -fx-min-height: 2.2em;
+}
+
+.dark-theme .text-field:focused, 
+.dark-theme .text-area:focused, 
+.dark-theme .combo-box-base:focused,
+.dark-theme .choice-box:focused {
+    -fx-border-color: #4c84ff !important;
+    -fx-background-color: #353535 !important;
+    -fx-effect: dropshadow(gaussian, rgba(76, 132, 255, 0.4), 3, 0, 0, 0);
+}
+
+.dark-theme .combo-box .list-view {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .combo-box .list-cell {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 0.5em;
+}
+
+.dark-theme .combo-box .list-cell:hover {
+    -fx-background-color: #404040;
+}
+
+.dark-theme .combo-box .list-cell:selected {
+    -fx-background-color: #1976d2 !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .combo-box .list-cell:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+/* General list view styling for dark theme */
+.dark-theme .list-view {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .list-cell {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 0.5em;
+}
+
+.dark-theme .list-cell:hover {
+    -fx-background-color: #404040;
+}
+
+.dark-theme .list-cell:selected {
+    -fx-background-color: #1976d2 !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .list-cell:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .label {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-padding: 0.25em 0;
+    -fx-font-size: 1em;
+}
+
+.dark-theme .section-title {
+    -fx-font-size: 1.4em;
+    -fx-font-weight: 600;
+    -fx-text-fill: #ffffff !important;
+    -fx-padding: 0.6em 0;
+}
+
+/* ===== SCROLL PANES (Dark Theme) ===== */
+.dark-theme .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-border-color: #404040;
+}
+
+.dark-theme .scroll-pane > .viewport {
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-theme .scroll-pane > .corner {
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-theme .scroll-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-pref-width: 0.8em;
+    -fx-pref-height: 0.8em;
+}
+
+.dark-theme .scroll-bar .track {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+.dark-theme .scroll-bar .thumb {
+    -fx-background-color: #555555;
+    -fx-background-radius: 0.4em;
+    -fx-border-radius: 0.4em;
+}
+
+.dark-theme .scroll-bar .thumb:hover {
+    -fx-background-color: #666666;
+}
+
+.dark-theme .scroll-bar .increment-button,
+.dark-theme .scroll-bar .decrement-button {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+/* ===== STATUS INDICATORS (Dark Theme) ===== */
+.dark-theme .label.status-paid {
+    -fx-text-fill: #66bb6a;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .label.status-pending {
+    -fx-text-fill: #ffb74d;
+    -fx-font-weight: bold;
+}
+
+/* ===== LAYOUT CONTAINERS (Dark Theme) ===== */
+.dark-theme .card {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0.25em;
+    -fx-padding: 1em;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-border-color: #404040;
+    -fx-border-radius: 0.25em;
+    -fx-border-width: 1px;
+}
+
+.dark-theme .container {
+    -fx-padding: 1em;
+    -fx-background-color: #1e1e1e;
+}
+
+/* Dashboard tiles (Dark Theme) */
+.dark-theme .dashboard-tile {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0.5em;
+    -fx-padding: 0.8em;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 6, 0, 0, 3);
+    -fx-border-color: #505050;
+    -fx-border-radius: 0.5em;
+    -fx-border-width: 1px;
+    -fx-min-width: 8em;
+    -fx-min-height: 6em;
+}
+
+.dark-theme .dashboard-tile-title {
+    -fx-font-size: 0.9em;
+    -fx-text-fill: #c0c0c0;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .dashboard-tile-value {
+    -fx-font-size: 1.4em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+/* Enhanced banner and alert styling */
+.dark-theme .alert {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #505050;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .alert .header-panel {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #ffffff;
+}
+
+.dark-theme .info-box {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #505050;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .success-banner {
+    -fx-background-color: #1b5e20;
+    -fx-text-fill: #c8e6c9;
+    -fx-border-color: #4caf50;
+}
+
+.dark-theme .warning-banner {
+    -fx-background-color: #e65100;
+    -fx-text-fill: #ffe0b2;
+    -fx-border-color: #ff9800;
+}
+
+.dark-theme .error-banner {
+    -fx-background-color: #b71c1c;
+    -fx-text-fill: #ffcdd2;
+    -fx-border-color: #f44336;
+}
+
+.dark-theme .info-banner {
+    -fx-background-color: #0d47a1;
+    -fx-text-fill: #bbdefb;
+    -fx-border-color: #2196f3;
+}
+
+/* Color classes (Dark Theme) */
+.dark-theme .primary {
+    -fx-text-fill: #4c84ff;
+}
+
+.dark-theme .success {
+    -fx-text-fill: #66bb6a;
+}
+
+.dark-theme .warning {
+    -fx-text-fill: #ffb74d;
+}
+
+.dark-theme .danger {
+    -fx-text-fill: #f44336;
+}
+
+.dark-theme .info {
+    -fx-text-fill: #42a5f5;
+}
+
+.dark-theme .info-text {
+    -fx-text-fill: #64b5f6 !important;
+    -fx-font-weight: 500;
+}
+
+/* Metric cards (Dark Theme) */
+.dark-theme .metric-card {
+    -fx-background-color: #424242;
+    -fx-border-color: #616161;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 4, 0, 0, 2);
+    -fx-padding: 0.8em;
+    -fx-min-width: 8em;
+    -fx-min-height: 5em;
+}
+
+/* Quick link buttons (Dark Theme) */
+.dark-theme .quick-link-button {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #e0e0e0;
+    -fx-background-radius: 0.2em;
+    -fx-padding: 0.3em 0.6em;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 2, 0, 0, 1);
+    -fx-font-size: 0.9em;
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+    -fx-border-radius: 0.2em;
+}
+
+.dark-theme .quick-link-button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+/* Status bar (Dark Theme) */
+.dark-theme .status-bar {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040 !important;
+    -fx-border-width: 1 0 0 0 !important;
+}
+
+.dark-theme .status-bar .label {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-font-weight: 500;
+}
+
+/* Menu bar (Dark Theme) */
+.dark-theme .menu-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-padding: 0.3em 0.5em;
+}
+
+.dark-theme .menu-bar .label {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-font-weight: 500;
+}
+
+.dark-theme .menu {
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .menu:hover {
+    -fx-background-color: #3a3a3a;
+}
+
+.dark-theme .menu-item {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .menu-item:hover {
+    -fx-background-color: #3a3a3a;
+}
+
+.dark-theme .context-menu {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+/* Product cards (Dark Theme) */
+.dark-theme .product-card {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0.5em;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0, 0, 2);
+    -fx-padding: 1em;
+    -fx-cursor: hand;
+    -fx-border-color: #404040;
+    -fx-border-radius: 0.5em;
+    -fx-border-width: 1px;
+}
+
+.dark-theme .product-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0, 0, 3);
+    -fx-background-color: #353535;
+}
+
+.dark-theme .product-card-title {
+    -fx-font-size: 1.1em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f0f0f0;
+}
+
+.dark-theme .product-card-price {
+    -fx-font-size: 1.2em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #66bb6a;
+}
+
+.dark-theme .product-card-stock {
+    -fx-text-fill: #b0b0b0;
+}
+
+.dark-theme .product-card-low-stock {
+    -fx-text-fill: #f44336;
+    -fx-font-weight: bold;
+}
+
+/* Theme toggle button */
+.theme-toggle-button {
+    -fx-min-width: 120px;
+    -fx-background-radius: 15px;
+    -fx-padding: 5px 10px;
+    -fx-font-size: 0.9em;
+}
+
+.theme-toggle-button.light-mode {
+    -fx-background-color: #f0f0f0;
+    -fx-text-fill: #333333;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 15px;
+}
+
+.theme-toggle-button.dark-mode {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+    -fx-border-radius: 15px;
+}
+
+.theme-toggle-button:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 3, 0, 0, 1);
+}
+
+/* Sales list styling for dark theme */
+.dark-theme .sales-list-item {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 5px;
+    -fx-padding: 8px;
+    -fx-border-color: #404040;
+    -fx-border-radius: 5px;
+    -fx-border-width: 1px;
+}
+
+.dark-theme .sales-list-item:hover {
+    -fx-background-color: #353535;
+}
+
+.dark-theme .tire-sales-item {
+    -fx-background-color: #424242;
+    -fx-border-color: #616161;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 4, 0, 0, 2);
+    -fx-padding: 0.8em;
+}
+
+.dark-theme .tire-sales-item:hover {
+    -fx-background-color: #484848;
+    -fx-border-color: #757575;
+}
+
+.dark-theme .tire-name {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.dark-theme .tire-size {
+    -fx-text-fill: #bdbdbd;
+    -fx-font-size: 12px;
+}
+
+.dark-theme .tire-quantity {
+    -fx-text-fill: #81c784;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.dark-theme .tire-value {
+    -fx-text-fill: #a5d6a7;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* Additional selection and focus styling for dark theme */
+.dark-theme .tree-view .tree-cell:selected {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .tree-view .tree-cell:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .choice-box .menu-item:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .menu-item:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .check-box:selected .box {
+    -fx-background-color: #4c84ff;
+    -fx-border-color: #4c84ff;
+}
+
+.dark-theme .radio-button:selected .radio {
+    -fx-background-color: #4c84ff;
+    -fx-border-color: #4c84ff;
+}
+
+/* Ensure text areas have proper text color */
+.dark-theme .text-area .content {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .text-area:focused .content {
+    -fx-background-color: #353535;
+    -fx-text-fill: #f0f0f0;
+}
+
+/* Fix any remaining visibility issues */
+.dark-theme .spinner .text-field {
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .date-picker .text-field {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* Additional UI component fixes for dark theme */
+.dark-theme .separator {
+    -fx-background-color: #505050;
+}
+
+.dark-theme .separator .line {
+    -fx-background-color: #505050;
+    -fx-border-color: #505050;
+}
+
+/* Progress indicators */
+.dark-theme .progress-bar {
+    -fx-background-color: #404040;
+}
+
+.dark-theme .progress-bar .bar {
+    -fx-background-color: #4c84ff;
+    -fx-background-radius: 3px;
+}
+
+.dark-theme .progress-indicator .indicator {
+    -fx-progress-color: #4c84ff;
+}
+
+/* Toolbar and menu styling */
+.dark-theme .tool-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+.dark-theme .toggle-button {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .toggle-button:selected {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+}
+
+/* Notification and status styling */
+.dark-theme .notification {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #505050;
+    -fx-text-fill: #e0e0e0;
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+}
+
+.dark-theme .status-good {
+    -fx-text-fill: #66bb6a;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .status-warning {
+    -fx-text-fill: #ffb74d;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .status-error {
+    -fx-text-fill: #f44336;
+    -fx-font-weight: bold;
+}
+
+/* Enhanced card and container styling */
+.dark-theme .card-header {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #f0f0f0;
+    -fx-padding: 10px;
+    -fx-background-radius: 5px 5px 0 0;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .card-content {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+    -fx-padding: 10px;
+    -fx-background-radius: 0 0 5px 5px;
+}
+
+/* Tooltip styling */
+.dark-theme .tooltip {
+    -fx-background-color: #353535 !important;
+    -fx-text-fill: #ffffff !important;
+    -fx-border-color: #555555;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-padding: 0.4em;
+    -fx-font-size: 0.9em;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 4, 0, 0, 2);
+}
+
+/* Context menu improvements */
+.dark-theme .context-menu .menu-item:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+/* Fix any remaining banner/header issues */
+.dark-theme .header {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #f0f0f0;
+    -fx-border-color: #505050;
+    -fx-padding: 10px;
+}
+
+.dark-theme .footer {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #c0c0c0;
+    -fx-border-color: #505050;
+    -fx-padding: 5px;
+}
+
+/* Ensure proper styling for all panes */
+.dark-theme .pane {
+    -fx-background-color: #1e1e1e !important;
+}
+
+.dark-theme .content-pane {
+    -fx-background-color: #2d2d2d;
+}
+
+/* Button group styling */
+.dark-theme .button-group {
+    -fx-background-color: transparent;
+}
+
+.dark-theme .button-group .button {
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .button-group .button:first-child {
+    -fx-background-radius: 3px 0 0 3px;
+    -fx-border-radius: 3px 0 0 3px;
+}
+
+.dark-theme .button-group .button:last-child {
+    -fx-background-radius: 0 3px 3px 0;
+    -fx-border-radius: 0 3px 3px 0;
+}
+
+.dark-theme .button-group .button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+.dark-theme .button-group .button:pressed {
+    -fx-background-color: #2a2a2a;
+}
+
+/* Enhanced metric cards for tire sales */
+.metric-card {
+    -fx-background-color: #424242;
+    -fx-border-color: #616161;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 4, 0, 0, 2);
+    -fx-padding: 10px;
+}
+
+.metric-card:hover {
+    -fx-background-color: #484848;
+}
+
+/* ===== COMPREHENSIVE CONTAINER STYLING (Dark Theme) ===== */
+.dark-theme .split-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+.dark-theme .split-pane > .split-pane-divider {
+    -fx-background-color: #404040;
+    -fx-padding: 0 0.05em 0 0.05em;
+}
+
+.dark-theme .anchor-pane,
+.dark-theme .border-pane,
+.dark-theme .grid-pane,
+.dark-theme .hbox,
+.dark-theme .vbox,
+.dark-theme .stack-pane,
+.dark-theme .flow-pane {
+    -fx-background-color: transparent;
+}
+
+/* Ensure panes with specific styling get dark backgrounds */
+.dark-theme .content-pane {
+    -fx-background-color: #1e1e1e !important;
+}
+
+.dark-theme .pane {
+    -fx-background-color: #1e1e1e !important;
+}
+
+/* ===== TOOLBAR AND BUTTON GROUPS (Dark Theme) ===== */
+.dark-theme .tool-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-padding: 0.5em;
+}
+
+.dark-theme .button-group {
+    -fx-background-color: transparent;
+}
+
+.dark-theme .button-group .button {
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .button-group .button:first-child {
+    -fx-background-radius: 3px 0 0 3px;
+    -fx-border-radius: 3px 0 0 3px;
+}
+
+.dark-theme .button-group .button:last-child {
+    -fx-background-radius: 0 3px 3px 0;
+    -fx-border-radius: 0 3px 3px 0;
+}
+
+.dark-theme .button-group .button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+.dark-theme .button-group .button:pressed {
+    -fx-background-color: #2a2a2a;
+}
+
+/* ===== COMPREHENSIVE DROPDOWN AND LIST STYLING (Dark Theme) ===== */
+.dark-theme .combo-box .list-view,
+.dark-theme .choice-box .context-menu,
+.dark-theme .list-view {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040 !important;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 6, 0, 0, 3);
+}
+
+.dark-theme .combo-box .list-cell,
+.dark-theme .choice-box .menu-item,
+.dark-theme .list-cell {
+    -fx-background-color: #2d2d2d !important;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-padding: 0.3em 0.5em;
+}
+
+.dark-theme .combo-box .list-cell:hover,
+.dark-theme .choice-box .menu-item:hover,
+.dark-theme .list-cell:hover {
+    -fx-background-color: #3a3a3a !important;
+    -fx-text-fill: #f0f0f0 !important;
+}
+
+.dark-theme .combo-box .list-cell:selected,
+.dark-theme .choice-box .menu-item:focused,
+.dark-theme .list-cell:selected {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .combo-box .list-cell:focused,
+.dark-theme .list-cell:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+/* ===== ENHANCED DIALOG AND POPUP STYLING (Dark Theme) ===== */
+.dark-theme .dialog-pane {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040;
+    -fx-border-radius: 0.25em;
+    -fx-text-fill: #e0e0e0;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 0, 5);
+}
+
+.dark-theme .dialog-pane .header-panel {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+    -fx-padding: 1em;
+}
+
+.dark-theme .dialog-pane .header-panel .label {
+    -fx-text-fill: white !important;
+    -fx-font-size: 1.1em;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .dialog-pane .content {
+    -fx-background-color: #2d2d2d !important;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .dialog-pane .button-bar {
+    -fx-background-color: #2d2d2d !important;
+    -fx-padding: 1em;
+}
+
+/* ===== TEXT AND LABEL IMPROVEMENTS (Dark Theme) ===== */
+.dark-theme .text {
+    -fx-fill: #e0e0e0 !important;
+}
+
+/* ===== ADDITIONAL UI ELEMENT FIXES (Dark Theme) ===== */
+.dark-theme .check-box .box {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .check-box:selected .box {
+    -fx-background-color: #4c84ff;
+    -fx-border-color: #4c84ff;
+}
+
+.dark-theme .check-box .mark {
+    -fx-background-color: white;
+}
+
+.dark-theme .radio-button .radio {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .radio-button:selected .radio {
+    -fx-background-color: #4c84ff;
+    -fx-border-color: #4c84ff;
+}
+
+.dark-theme .radio-button:selected .dot {
+    -fx-background-color: white;
+}
+
+/* ===== ENHANCED CONTEXT MENU STYLING (Dark Theme) ===== */
+.dark-theme .context-menu {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 6, 0, 0, 3);
+}
+
+.dark-theme .context-menu .menu-item {
+    -fx-background-color: #2d2d2d !important;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-padding: 0.4em 0.8em;
+}
+
+.dark-theme .context-menu .menu-item:hover,
+.dark-theme .context-menu .menu-item:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .context-menu .separator .line {
+    -fx-background-color: #404040;
+    -fx-border-color: #404040;
+}
+
+/* ===== SPINNER AND NUMBER FIELD FIXES (Dark Theme) ===== */
+.dark-theme .spinner {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .spinner .text-field {
+    -fx-background-color: #2d2d2d !important;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-border-color: transparent;
+}
+
+.dark-theme .spinner .increment-arrow-button,
+.dark-theme .spinner .decrement-arrow-button {
+    -fx-background-color: #3c3c3c;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .spinner .increment-arrow-button:hover,
+.dark-theme .spinner .decrement-arrow-button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+/* ===== PROGRESS AND LOADING INDICATORS (Dark Theme) ===== */
+.dark-theme .progress-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+.dark-theme .progress-bar .bar {
+    -fx-background-color: #4c84ff;
+    -fx-background-radius: 3px;
+}
+
+.dark-theme .progress-indicator .indicator {
+    -fx-progress-color: #4c84ff;
+}
+
+/* ===== DATE PICKER FIXES (Dark Theme) ===== */
+.dark-theme .date-picker .text-field {
+    -fx-background-color: #2d2d2d !important;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .date-picker .arrow-button {
+    -fx-background-color: #3c3c3c;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .date-picker .arrow-button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+/* ===== INVENTORY AND PRODUCT SPECIFIC STYLING (Dark Theme) ===== */
+
+/* Inventory table specific styling */
+.dark-theme .inventory-table {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.dark-theme .inventory-table .table-row-cell:empty {
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-theme .inventory-table .table-row-cell:empty:odd {
+    -fx-background-color: #323232;
+}
+
+/* Product card styling */
+.dark-theme .product-card {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 3, 0, 0, 1);
+}
+
+.dark-theme .product-card:hover {
+    -fx-background-color: #353535;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .product-card-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.1em;
+}
+
+.dark-theme .product-card-price {
+    -fx-text-fill: #66bb6a;
+    -fx-font-weight: bold;
+    -fx-font-size: 1em;
+}
+
+.dark-theme .product-card-stock {
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .product-card-low-stock {
+    -fx-text-fill: #f44336;
+    -fx-font-weight: bold;
+}
+
+/* Filter and search controls */
+.dark-theme .filter-box {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 10px;
+}
+
+.dark-theme .search-field {
+    -fx-background-color: #353535 !important;
+    -fx-text-fill: #ffffff !important;
+    -fx-border-color: #555555 !important;
+    -fx-prompt-text-fill: #999999;
+}
+
+.dark-theme .search-field:focused {
+    -fx-border-color: #4c84ff !important;
+    -fx-background-color: #3a3a3a !important;
+}
+
+/* Status indicators for inventory */
+.dark-theme .stock-status-low {
+    -fx-text-fill: #f44336 !important;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .stock-status-medium {
+    -fx-text-fill: #ff9800 !important;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .stock-status-high {
+    -fx-text-fill: #4caf50 !important;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .price-display {
+    -fx-text-fill: #66bb6a !important;
+    -fx-font-weight: bold;
+}
+
+/* Category and manufacturer labels */
+.dark-theme .category-label {
+    -fx-text-fill: #42a5f5 !important;
+    -fx-font-style: italic;
+}
+
+.dark-theme .manufacturer-label {
+    -fx-text-fill: #ba68c8 !important;
+    -fx-font-weight: bold;
+}
+
+/* Form section styling */
+.dark-theme .form-section {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 15px;
+    -fx-spacing: 10px;
+}
+
+.dark-theme .form-section .label {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold;
+}
+
+/* Data entry validation styling */
+.dark-theme .field-error {
+    -fx-border-color: #f44336 !important;
+    -fx-border-width: 2px;
+}
+
+.dark-theme .field-warning {
+    -fx-border-color: #ff9800 !important;
+    -fx-border-width: 2px;
+}
+
+.dark-theme .field-success {
+    -fx-border-color: #4caf50 !important;
+    -fx-border-width: 2px;
+}
+
+/* Enhanced metric cards for tire sales */
+.dark-theme .metric-card {
+    -fx-background-color: #424242 !important;
+    -fx-border-color: #616161;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 4, 0, 0, 2);
+    -fx-padding: 0.8em !important;
+    -fx-min-width: 8em;
+    -fx-min-height: 5em;
+}
+
+.dark-theme .metric-card:hover {
+    -fx-background-color: #484848 !important;
+}
+
+/* ===== TIRE DETAILS PANEL STYLING (Dark Theme) ===== */
+
+/* Main details panel container */
+.dark-theme .details-panel,
+.dark-theme .tire-details-panel,
+.dark-theme .product-details-panel,
+.dark-theme .details-container {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040 !important;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 1em !important;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+}
+
+/* Details panel content areas */
+.dark-theme .details-panel .content,
+.dark-theme .tire-details-panel .content,
+.dark-theme .product-details-panel .content {
+    -fx-background-color: #2d2d2d !important;
+}
+
+/* Section headers in details panel */
+.dark-theme .details-panel .section-header,
+.dark-theme .tire-details-panel .section-header,
+.dark-theme .product-details-panel .section-header,
+.dark-theme .details-section-title {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.1em;
+    -fx-padding: 5px 0;
+}
+
+/* All labels in details panel */
+.dark-theme .details-panel .label,
+.dark-theme .tire-details-panel .label,
+.dark-theme .product-details-panel .label,
+.dark-theme .details-panel Label,
+.dark-theme .tire-details-panel Label,
+.dark-theme .product-details-panel Label {
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+/* Title/heading labels */
+.dark-theme .details-panel .title,
+.dark-theme .tire-details-panel .title,
+.dark-theme .product-details-panel .title,
+.dark-theme .details-title {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.3em;
+}
+
+/* Subtitle labels */
+.dark-theme .details-panel .subtitle,
+.dark-theme .tire-details-panel .subtitle,
+.dark-theme .product-details-panel .subtitle {
+    -fx-text-fill: #c0c0c0 !important;
+    -fx-font-size: 1.0em;
+}
+
+/* Value/data labels */
+.dark-theme .details-panel .value,
+.dark-theme .tire-details-panel .value,
+.dark-theme .product-details-panel .value,
+.dark-theme .details-value {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold;
+}
+
+/* Price displays in details panel */
+.dark-theme .details-panel .price,
+.dark-theme .tire-details-panel .price,
+.dark-theme .product-details-panel .price,
+.dark-theme .details-price {
+    -fx-text-fill: #66bb6a !important;
+    -fx-font-weight: bold;
+}
+
+/* Stock/quantity displays */
+.dark-theme .details-panel .stock,
+.dark-theme .tire-details-panel .stock,
+.dark-theme .product-details-panel .stock,
+.dark-theme .details-stock {
+    -fx-text-fill: #42a5f5 !important;
+    -fx-font-weight: bold;
+}
+
+/* Rating displays */
+.dark-theme .details-panel .rating,
+.dark-theme .tire-details-panel .rating,
+.dark-theme .product-details-panel .rating,
+.dark-theme .details-rating {
+    -fx-text-fill: #ffb74d !important;
+    -fx-font-weight: bold;
+}
+
+/* Specification sections */
+.dark-theme .details-panel .specifications,
+.dark-theme .tire-details-panel .specifications,
+.dark-theme .product-details-panel .specifications,
+.dark-theme .specs-section {
+    -fx-background-color: #353535 !important;
+    -fx-border-color: #505050 !important;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-padding: 10px;
+}
+
+/* Individual specification items */
+.dark-theme .details-panel .spec-item,
+.dark-theme .tire-details-panel .spec-item,
+.dark-theme .product-details-panel .spec-item,
+.dark-theme .specification-item {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-padding: 2px 0;
+}
+
+/* Spec labels (left side) */
+.dark-theme .details-panel .spec-label,
+.dark-theme .tire-details-panel .spec-label,
+.dark-theme .product-details-panel .spec-label {
+    -fx-text-fill: #c0c0c0 !important;
+    -fx-font-weight: normal;
+}
+
+/* Spec values (right side) */
+.dark-theme .details-panel .spec-value,
+.dark-theme .tire-details-panel .spec-value,
+.dark-theme .product-details-panel .spec-value {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold;
+}
+
+/* Recommendation sections */
+.dark-theme .details-panel .recommendations,
+.dark-theme .tire-details-panel .recommendations,
+.dark-theme .product-details-panel .recommendations {
+    -fx-background-color: #1b5e20 !important;
+    -fx-text-fill: #c8e6c9 !important;
+    -fx-border-color: #4caf50 !important;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-padding: 8px;
+}
+
+/* Warning/alert sections */
+.dark-theme .details-panel .warning,
+.dark-theme .tire-details-panel .warning,
+.dark-theme .product-details-panel .warning {
+    -fx-background-color: #e65100 !important;
+    -fx-text-fill: #ffe0b2 !important;
+    -fx-border-color: #ff9800 !important;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-padding: 8px;
+}
+
+/* Info sections */
+.dark-theme .details-panel .info,
+.dark-theme .tire-details-panel .info,
+.dark-theme .product-details-panel .info {
+    -fx-background-color: #0d47a1 !important;
+    -fx-text-fill: #bbdefb !important;
+    -fx-border-color: #2196f3 !important;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+    -fx-padding: 8px;
+}
+
+/* Nested VBox/HBox containers in details panel */
+.dark-theme .details-panel .vbox,
+.dark-theme .details-panel .hbox,
+.dark-theme .tire-details-panel .vbox,
+.dark-theme .tire-details-panel .hbox,
+.dark-theme .product-details-panel .vbox,
+.dark-theme .product-details-panel .hbox {
+    -fx-background-color: transparent !important;
+}
+
+/* Grid panes in details panel */
+.dark-theme .details-panel .grid-pane,
+.dark-theme .tire-details-panel .grid-pane,
+.dark-theme .product-details-panel .grid-pane {
+    -fx-background-color: transparent !important;
+}
+
+/* Separator lines in details panel */
+.dark-theme .details-panel .separator,
+.dark-theme .tire-details-panel .separator,
+.dark-theme .product-details-panel .separator {
+    -fx-background-color: #505050 !important;
+}
+
+.dark-theme .details-panel .separator .line,
+.dark-theme .tire-details-panel .separator .line,
+.dark-theme .product-details-panel .separator .line {
+    -fx-background-color: #505050 !important;
+    -fx-border-color: #505050 !important;
+}
+
+/* Buttons in details panel */
+.dark-theme .details-panel .button,
+.dark-theme .tire-details-panel .button,
+.dark-theme .product-details-panel .button {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.dark-theme .details-panel .button:hover,
+.dark-theme .tire-details-panel .button:hover,
+.dark-theme .product-details-panel .button:hover {
+    -fx-background-color: #3a75ff !important;
+}
+
+/* Secondary buttons in details panel */
+.dark-theme .details-panel .button.secondary,
+.dark-theme .tire-details-panel .button.secondary,
+.dark-theme .product-details-panel .button.secondary {
+    -fx-background-color: #3c3c3c !important;
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-border-color: #555555 !important;
+}
+
+/* Text fields in details panel */
+.dark-theme .details-panel .text-field,
+.dark-theme .tire-details-panel .text-field,
+.dark-theme .product-details-panel .text-field {
+    -fx-background-color: #353535 !important;
+    -fx-text-fill: #ffffff !important;
+    -fx-border-color: #555555 !important;
+}
+
+/* Any ScrollPane in details panel */
+.dark-theme .details-panel .scroll-pane,
+.dark-theme .tire-details-panel .scroll-pane,
+.dark-theme .product-details-panel .scroll-pane {
+    -fx-background-color: #2d2d2d !important;
+}
+
+.dark-theme .details-panel .scroll-pane .viewport,
+.dark-theme .tire-details-panel .scroll-pane .viewport,
+.dark-theme .product-details-panel .scroll-pane .viewport {
+    -fx-background-color: #2d2d2d !important;
+}
+
+/* ===== CATCH-ALL STYLING FOR DETAILS PANELS (Dark Theme) ===== */
+
+/* Force dark backgrounds for any pane or container in details panel */
+.dark-theme .details-panel *,
+.dark-theme .tire-details-panel *,
+.dark-theme .product-details-panel * {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* Force specific styling for common JavaFX components in details panel */
+.dark-theme .details-panel Pane,
+.dark-theme .details-panel VBox,
+.dark-theme .details-panel HBox,
+.dark-theme .details-panel BorderPane,
+.dark-theme .details-panel GridPane,
+.dark-theme .details-panel StackPane,
+.dark-theme .details-panel FlowPane,
+.dark-theme .details-panel AnchorPane,
+.dark-theme .tire-details-panel Pane,
+.dark-theme .tire-details-panel VBox,
+.dark-theme .tire-details-panel HBox,
+.dark-theme .tire-details-panel BorderPane,
+.dark-theme .tire-details-panel GridPane,
+.dark-theme .tire-details-panel StackPane,
+.dark-theme .tire-details-panel FlowPane,
+.dark-theme .tire-details-panel AnchorPane,
+.dark-theme .product-details-panel Pane,
+.dark-theme .product-details-panel VBox,
+.dark-theme .product-details-panel HBox,
+.dark-theme .product-details-panel BorderPane,
+.dark-theme .product-details-panel GridPane,
+.dark-theme .product-details-panel StackPane,
+.dark-theme .product-details-panel FlowPane,
+.dark-theme .product-details-panel AnchorPane {
+    -fx-background-color: transparent !important;
+}
+
+/* Ensure all text nodes inherit proper colors */
+.dark-theme .details-panel Text,
+.dark-theme .tire-details-panel Text,
+.dark-theme .product-details-panel Text {
+    -fx-fill: #e0e0e0 !important;
+}
+
+/* ===== INVENTORY DETAILS PANE SPECIFIC FIXES (Dark Theme) ===== */
+
+/* Target the specific details pane in inventory by ID - highest priority */
+.dark-theme #detailsPane {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040 !important;
+    -fx-border-radius: 5px !important;
+    -fx-background-radius: 5px !important;
+    -fx-padding: 1em !important;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+}
+
+/* All labels within the inventory details pane */
+.dark-theme #detailsPane .label,
+.dark-theme #detailsPane Label {
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+/* Title labels in details pane */
+.dark-theme #detailsPane .label[style*="font-size: 18px"],
+.dark-theme #detailsPane .label[style*="font-weight: bold"] {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold !important;
+}
+
+/* Rating labels with specific styling */
+.dark-theme #detailsPane .label[style*="font-size: 16px"] {
+    -fx-text-fill: #ffffff !important;
+}
+
+/* Header labels */
+.dark-theme #detailsPane .label[style*="font-size: 14px"][style*="font-weight: bold"] {
+    -fx-text-fill: #ffffff !important;
+}
+
+/* Manufacturer and general info labels */
+.dark-theme #detailsPane .label[style*="text-fill: #666"] {
+    -fx-text-fill: #c0c0c0 !important;
+}
+
+/* GridPane containers within details pane */
+.dark-theme #detailsPane .grid-pane,
+.dark-theme #detailsPane GridPane {
+    -fx-background-color: transparent !important;
+}
+
+/* VBox containers for recommendations */
+.dark-theme #detailsPane .vbox[style*="background-color: #e3f2fd"] {
+    -fx-background-color: #1a237e !important;
+    -fx-border-color: #3f51b5 !important;
+    -fx-border-radius: 3px !important;
+    -fx-background-radius: 3px !important;
+}
+
+/* Labels inside recommendation boxes */
+.dark-theme #detailsPane .vbox[style*="background-color: #e3f2fd"] .label {
+    -fx-text-fill: #bbdefb !important;
+}
+
+/* Separators in details pane */
+.dark-theme #detailsPane .separator {
+    -fx-background-color: #505050 !important;
+}
+
+.dark-theme #detailsPane .separator .line {
+    -fx-background-color: #505050 !important;
+    -fx-border-color: #505050 !important;
+}
+
+/* Price value labels */
+.dark-theme #detailsPane .label[style*="font-size: 16px"][style*="font-weight: bold"] {
+    -fx-text-fill: #66bb6a !important;
+    -fx-font-size: 1.2em !important;
+    -fx-font-weight: bold !important;
+}
+
+/* Stock status labels - red for out of stock */
+.dark-theme #detailsPane .label[style*="text-fill: #d32f2f"] {
+    -fx-text-fill: #f44336 !important;
+}
+
+/* Stock status labels - orange for low stock */
+.dark-theme #detailsPane .label[style*="text-fill: #f57c00"] {
+    -fx-text-fill: #ff9800 !important;
+}
+
+/* Stock status labels - green for good stock */
+.dark-theme #detailsPane .label[style*="text-fill: #2e7d32"] {
+    -fx-text-fill: #4caf50 !important;
+}
+
+/* Any nested containers in details pane */
+.dark-theme #detailsPane VBox,
+.dark-theme #detailsPane HBox,
+.dark-theme #detailsPane BorderPane,
+.dark-theme #detailsPane StackPane,
+.dark-theme #detailsPane FlowPane,
+.dark-theme #detailsPane AnchorPane {
+    -fx-background-color: transparent !important;
+}
+
+/* Force override any inline background colors */
+.dark-theme #detailsPane * {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* ===== RESPONSIVE COMPONENT SCALING RULES ===== */
+
+/* Small screen scaling overrides */
+.root.dark-theme.small-screen .button {
+    -fx-padding: 0.3em 0.6em;
+    -fx-min-height: 2em;
+}
+
+.root.dark-theme.small-screen .text-field,
+.root.dark-theme.small-screen .text-area,
+.root.dark-theme.small-screen .combo-box-base,
+.root.dark-theme.small-screen .choice-box {
+    -fx-padding: 0.3em 0.5em;
+    -fx-min-height: 2em;
+}
+
+.root.dark-theme.small-screen .table-view .table-cell {
+    -fx-padding: 0.15em 0.3em;
+    -fx-font-size: 0.9em;
+}
+
+.root.dark-theme.small-screen .dashboard-tile {
+    -fx-padding: 0.6em;
+    -fx-min-width: 7em;
+    -fx-min-height: 5em;
+}
+
+.root.dark-theme.small-screen #detailsPane {
+    -fx-padding: 0.8em !important;
+}
+
+.root.dark-theme.small-screen .tab {
+    -fx-padding: 0.3em 0.5em;
+    -fx-min-width: 3em;
+}
+
+.root.dark-theme.small-screen .dialog-pane {
+    -fx-padding: 0.8em;
+}
+
+.root.dark-theme.small-screen .scroll-bar {
+    -fx-pref-width: 0.6em;
+    -fx-pref-height: 0.6em;
+}
+
+.root.dark-theme.small-screen .tire-sales-item {
+    -fx-padding: 0.6em;
+}
+
+.root.dark-theme.small-screen .metric-card {
+    -fx-padding: 0.6em !important;
+    -fx-min-width: 6em;
+    -fx-min-height: 4em;
+}
+
+.root.dark-theme.small-screen .menu-bar {
+    -fx-padding: 0.2em 0.3em;
+}
+
+/* Large screen scaling overrides */
+.root.dark-theme.large-screen .button,
+.root.dark-theme.extra-large-screen .button,
+.root.dark-theme.ultra-wide-screen .button {
+    -fx-padding: 0.5em 1em;
+    -fx-min-height: 2.5em;
+}
+
+.root.dark-theme.large-screen .text-field,
+.root.dark-theme.large-screen .text-area,
+.root.dark-theme.large-screen .combo-box-base,
+.root.dark-theme.large-screen .choice-box,
+.root.dark-theme.extra-large-screen .text-field,
+.root.dark-theme.extra-large-screen .text-area,
+.root.dark-theme.extra-large-screen .combo-box-base,
+.root.dark-theme.extra-large-screen .choice-box,
+.root.dark-theme.ultra-wide-screen .text-field,
+.root.dark-theme.ultra-wide-screen .text-area,
+.root.dark-theme.ultra-wide-screen .combo-box-base,
+.root.dark-theme.ultra-wide-screen .choice-box {
+    -fx-padding: 0.5em 0.8em;
+    -fx-min-height: 2.5em;
+}
+
+.root.dark-theme.large-screen .table-view .table-cell,
+.root.dark-theme.extra-large-screen .table-view .table-cell,
+.root.dark-theme.ultra-wide-screen .table-view .table-cell {
+    -fx-padding: 0.3em 0.6em;
+}
+
+.root.dark-theme.large-screen .dashboard-tile,
+.root.dark-theme.extra-large-screen .dashboard-tile,
+.root.dark-theme.ultra-wide-screen .dashboard-tile {
+    -fx-padding: 1.2em;
+    -fx-min-width: 10em;
+    -fx-min-height: 7em;
+}
+
+.root.dark-theme.large-screen #detailsPane,
+.root.dark-theme.extra-large-screen #detailsPane,
+.root.dark-theme.ultra-wide-screen #detailsPane {
+    -fx-padding: 1.5em !important;
+}
+
+.root.dark-theme.large-screen .tab,
+.root.dark-theme.extra-large-screen .tab,
+.root.dark-theme.ultra-wide-screen .tab {
+    -fx-padding: 0.5em 0.8em;
+    -fx-min-width: 5em;
+}
+
+.root.dark-theme.large-screen .dialog-pane,
+.root.dark-theme.extra-large-screen .dialog-pane,
+.root.dark-theme.ultra-wide-screen .dialog-pane {
+    -fx-padding: 1.5em;
+}
+
+.root.dark-theme.large-screen .scroll-bar,
+.root.dark-theme.extra-large-screen .scroll-bar,
+.root.dark-theme.ultra-wide-screen .scroll-bar {
+    -fx-pref-width: 1em;
+    -fx-pref-height: 1em;
+}
+
+.root.dark-theme.large-screen .tire-sales-item,
+.root.dark-theme.extra-large-screen .tire-sales-item,
+.root.dark-theme.ultra-wide-screen .tire-sales-item {
+    -fx-padding: 1.2em;
+}
+
+.root.dark-theme.large-screen .metric-card,
+.root.dark-theme.extra-large-screen .metric-card,
+.root.dark-theme.ultra-wide-screen .metric-card {
+    -fx-padding: 1.2em !important;
+    -fx-min-width: 10em;
+    -fx-min-height: 6em;
+}
+
+.root.dark-theme.large-screen .menu-bar,
+.root.dark-theme.extra-large-screen .menu-bar,
+.root.dark-theme.ultra-wide-screen .menu-bar {
+    -fx-padding: 0.4em 0.8em;
+}
+
+/* ===== RESPONSIVE INVENTORY DETAILS ENHANCEMENTS ===== */
+
+/* Title labels responsive sizing */
+.dark-theme #detailsPane .label[style*="font-size: 18px"] {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold !important;
+}
+
+.root.dark-theme.small-screen #detailsPane .label[style*="font-size: 18px"] {
+    -fx-font-size: 1.2em !important;
+}
+
+.root.dark-theme.large-screen #detailsPane .label[style*="font-size: 18px"],
+.root.dark-theme.extra-large-screen #detailsPane .label[style*="font-size: 18px"],
+.root.dark-theme.ultra-wide-screen #detailsPane .label[style*="font-size: 18px"] {
+    -fx-font-size: 1.4em !important;
+}
+
+/* Section headers responsive sizing */
+.dark-theme #detailsPane .label[style*="font-size: 14px"][style*="font-weight: bold"] {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold !important;
+}
+
+.root.dark-theme.small-screen #detailsPane .label[style*="font-size: 14px"][style*="font-weight: bold"] {
+    -fx-font-size: 1em !important;
+}
+
+.root.dark-theme.large-screen #detailsPane .label[style*="font-size: 14px"][style*="font-weight: bold"],
+.root.dark-theme.extra-large-screen #detailsPane .label[style*="font-size: 14px"][style*="font-weight: bold"],
+.root.dark-theme.ultra-wide-screen #detailsPane .label[style*="font-size: 14px"][style*="font-weight: bold"] {
+    -fx-font-size: 1.2em !important;
+}
+
+/* GridPane responsive spacing */
+.dark-theme #detailsPane .grid-pane,
+.dark-theme #detailsPane GridPane {
+    -fx-background-color: transparent !important;
+}
+
+.root.dark-theme.small-screen #detailsPane .grid-pane,
+.root.dark-theme.small-screen #detailsPane GridPane {
+    -fx-hgap: 0.8em;
+    -fx-vgap: 0.4em;
+}
+
+.root.dark-theme.large-screen #detailsPane .grid-pane,
+.root.dark-theme.large-screen #detailsPane GridPane,
+.root.dark-theme.extra-large-screen #detailsPane .grid-pane,
+.root.dark-theme.extra-large-screen #detailsPane GridPane,
+.root.dark-theme.ultra-wide-screen #detailsPane .grid-pane,
+.root.dark-theme.ultra-wide-screen #detailsPane GridPane {
+    -fx-hgap: 1.5em;
+    -fx-vgap: 0.8em;
+}
+
+/* Recommendation boxes responsive */
+.dark-theme #detailsPane .vbox[style*="background-color: #e3f2fd"] {
+    -fx-background-color: #1a237e !important;
+    -fx-border-color: #3f51b5 !important;
+    -fx-border-radius: 3px !important;
+    -fx-background-radius: 3px !important;
+}
+
+.root.dark-theme.small-screen #detailsPane .vbox[style*="background-color: #e3f2fd"] {
+    -fx-padding: 0.6em !important;
+}
+
+.root.dark-theme.large-screen #detailsPane .vbox[style*="background-color: #e3f2fd"],
+.root.dark-theme.extra-large-screen #detailsPane .vbox[style*="background-color: #e3f2fd"],
+.root.dark-theme.ultra-wide-screen #detailsPane .vbox[style*="background-color: #e3f2fd"] {
+    -fx-padding: 1.2em !important;
+}
+
+/* ===== ENHANCED TEXT READABILITY AND CONTRAST (Dark Theme) ===== */
+
+/* Improve general text contrast */
+.dark-theme .label {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-font-size: 1em;
+}
+
+/* Table text readability improvements */
+.dark-theme .table-view .table-cell {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-background-color: transparent;
+    -fx-padding: 0.3em 0.5em;
+    -fx-border-color: transparent;
+    -fx-font-size: 0.95em;
+}
+
+.dark-theme .table-view .column-header .label {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold;
+}
+
+/* Enhanced table row styling */
+.dark-theme .table-view .table-row-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: transparent;
+    -fx-table-cell-border-color: #404040;
+    -fx-padding: 0.2em 0;
+}
+
+.dark-theme .table-view .table-row-cell:odd {
+    -fx-background-color: #323232;
+}
+
+.dark-theme .table-view .table-row-cell:hover {
+    -fx-background-color: #404040 !important;
+}
+
+.dark-theme .table-view .table-row-cell:selected {
+    -fx-background-color: #1976d2 !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .table-view .table-cell:selected {
+    -fx-background-color: #1976d2 !important;
+    -fx-text-fill: white !important;
+}
+
+/* Button text improvements */
+.dark-theme .button {
+    -fx-text-fill: white !important;
+    -fx-font-weight: 500;
+    -fx-font-size: 0.95em;
+}
+
+.dark-theme .button.secondary {
+    -fx-background-color: #6c757d;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .button.secondary:hover {
+    -fx-background-color: #5a6268;
+}
+
+/* Form control text improvements */
+.dark-theme .text-field, 
+.dark-theme .text-area, 
+.dark-theme .combo-box-base,
+.dark-theme .choice-box {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #555555 !important;
+    -fx-border-width: 1px;
+    -fx-font-size: 0.95em;
+}
+
+.dark-theme .text-field:focused, 
+.dark-theme .text-area:focused, 
+.dark-theme .combo-box-base:focused,
+.dark-theme .choice-box:focused {
+    -fx-border-color: #4c84ff !important;
+    -fx-background-color: #353535 !important;
+    -fx-effect: dropshadow(gaussian, rgba(76, 132, 255, 0.4), 3, 0, 0, 0);
+}
+
+/* List and combo box improvements */
+.dark-theme .list-view {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.dark-theme .list-cell {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 0.5em;
+}
+
+.dark-theme .list-cell:hover {
+    -fx-background-color: #404040;
+}
+
+.dark-theme .list-cell:selected {
+    -fx-background-color: #1976d2 !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .list-cell:focused {
+    -fx-background-color: #4c84ff !important;
+    -fx-text-fill: white !important;
+}
+
+.dark-theme .combo-box .list-cell {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-theme .combo-box .list-cell:selected {
+    -fx-background-color: #1976d2 !important;
+    -fx-text-fill: white !important;
+}
+
+/* Tab improvements */
+.dark-theme .tab {
+    -fx-text-fill: #b0b0b0 !important;
+    -fx-background-color: #2d2d2d;
+    -fx-font-weight: 500;
+}
+
+.dark-theme .tab:selected {
+    -fx-text-fill: #4c84ff !important;
+    -fx-background-color: #1e1e1e;
+    -fx-font-weight: 600;
+}
+
+/* Status bar and header improvements */
+.dark-theme .status-bar {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #404040 !important;
+    -fx-border-width: 1 0 0 0 !important;
+}
+
+.dark-theme .status-bar .label {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-font-weight: 500;
+}
+
+/* Dashboard tile text improvements */
+.dark-theme .dashboard-tile-title {
+    -fx-text-fill: #c0c0c0 !important;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .dashboard-tile-value {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: bold;
+}
+
+/* Section title improvements */
+.dark-theme .section-title {
+    -fx-text-fill: #ffffff !important;
+    -fx-font-weight: 600;
+    -fx-font-size: 1.4em;
+}
+
+/* Menu improvements */
+.dark-theme .menu-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-padding: 0.3em 0.5em;
+}
+
+.dark-theme .menu-bar .label {
+    -fx-text-fill: #e0e0e0 !important;
+    -fx-font-weight: 500;
+}
+
+.dark-theme .menu-item .label {
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+/* Dialog improvements */
+.dark-theme .dialog-pane {
+    -fx-background-color: #2d2d2d !important;
+}
+
+.dark-theme .dialog-pane .label {
+    -fx-text-fill: #e0e0e0 !important;
+}
+
+.dark-theme .dialog-pane .header-panel {
+    -fx-background-color: #4c84ff;
+}
+
+.dark-theme .dialog-pane .header-panel .label {
+    -fx-text-fill: white !important;
+    -fx-font-weight: 600;
+}
+
+/* Titled pane improvements */
+.dark-theme .titled-pane > .title {
+    -fx-text-fill: #ffffff !important;
+    -fx-background-color: #353535;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .titled-pane > .content {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+/* Separator styling */
+.dark-theme .separator .line {
+    -fx-background-color: #555555;
+    -fx-border-color: #555555;
+}
+
+/* Enhanced specific text classes */
+.dark-theme .primary-text {
+    -fx-text-fill: #64b5f6 !important;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .success-text {
+    -fx-text-fill: #81c784 !important;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .warning-text {
+    -fx-text-fill: #ffb74d !important;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .error-text {
+    -fx-text-fill: #e57373 !important;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .info-text {
+    -fx-text-fill: #64b5f6 !important;
+    -fx-font-weight: 500;
+}
+
+/* ===== ENHANCED SALES PAGE STYLING (Dark Theme) ===== */
+
+/* Sales table enhancements */
+.dark-theme .enhanced-sales-table {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 4, 0, 0, 2);
+}
+
+.dark-theme .enhanced-sales-table .table-row-cell:hover {
+    -fx-background-color: #1e3a8a !important;
+    -fx-border-color: #4c84ff;
+}
+
+/* Filter panel styling */
+.dark-theme .filter-panel {
+    -fx-background-color: #353535;
+    -fx-border-color: #555555;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 3, 0, 0, 1);
+}
+
+.dark-theme .filter-panel > .title {
+    -fx-background-color: #424242;
+    -fx-text-fill: #e0e0e0;
+    -fx-font-weight: 600;
+}
+
+/* Small buttons for table actions */
+.dark-theme .small-button {
+    -fx-padding: 0.2em 0.5em;
+    -fx-font-size: 0.8em;
+    -fx-min-width: 50px;
+    -fx-background-radius: 4px;
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+}
+
+.dark-theme .small-button:hover {
+    -fx-background-color: #3a75ff;
+}
+
+/* Enhanced metric cards */
+.dark-theme .metric-card {
+    -fx-background-color: #2d2d2d !important;
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 6, 0, 0, 3);
+    -fx-padding: 1em !important;
+    -fx-min-width: 120px;
+    -fx-min-height: 80px;
+}
+
+.dark-theme .metric-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 8, 0, 0, 4);
+    -fx-scale-y: 1.02;
+    -fx-scale-x: 1.02;
+}
+
+/* Button styling improvements */
+.dark-theme .button.primary {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+}
+
+.dark-theme .button.primary:hover {
+    -fx-background-color: #3a75ff;
+}
+
+.dark-theme .button.success {
+    -fx-background-color: #4caf50;
+    -fx-text-fill: white;
+}
+
+.dark-theme .button.success:hover {
+    -fx-background-color: #43a047;
+}
+
+.dark-theme .button.warning {
+    -fx-background-color: #ff9800;
+    -fx-text-fill: white;
+}
+
+.dark-theme .button.warning:hover {
+    -fx-background-color: #f57c00;
+}
+
+/* ===== ENHANCED SERVICES PAGE STYLING (Dark Theme) ===== */
+
+/* Services layout improvements */
+.dark-theme .services-container {
+    -fx-background-color: #1e1e1e;
+    -fx-padding: 15px;
+    -fx-spacing: 15px;
+}
+
+.dark-theme .services-split-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: #404040;
+}
+
+.dark-theme .services-split-pane > .split-pane-divider {
+    -fx-background-color: #404040;
+    -fx-padding: 0 0.1em 0 0.1em;
+}
+
+/* Service card styling */
+.dark-theme .service-card {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 4, 0, 0, 2);
+    -fx-spacing: 8px;
+}
+
+.dark-theme .service-card:hover {
+    -fx-border-color: #4c84ff;
+    -fx-effect: dropshadow(gaussian, rgba(76,132,255,0.3), 6, 0, 0, 3);
+}
+
+.dark-theme .service-card .service-name {
+    -fx-font-size: 1.1em;
+    -fx-font-weight: 600;
+    -fx-text-fill: #ffffff;
+}
+
+.dark-theme .service-card .service-price {
+    -fx-font-size: 1.2em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #81c784;
+}
+
+.dark-theme .service-card .service-description {
+    -fx-text-fill: #b0b0b0;
+    -fx-wrap-text: true;
+}
+
+/* Technician card styling */
+.dark-theme .technician-card {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 4, 0, 0, 2);
+    -fx-spacing: 6px;
+}
+
+.dark-theme .technician-card .technician-name {
+    -fx-font-size: 1.1em;
+    -fx-font-weight: 600;
+    -fx-text-fill: #ffffff;
+}
+
+.dark-theme .technician-card .technician-specialty {
+    -fx-text-fill: #64b5f6;
+    -fx-font-weight: 500;
+}
+
+.dark-theme .technician-card .technician-status {
+    -fx-font-size: 0.9em;
+}
+
+.dark-theme .technician-available {
+    -fx-text-fill: #81c784;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .technician-busy {
+    -fx-text-fill: #ffb74d;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .technician-unavailable {
+    -fx-text-fill: #e57373;
+    -fx-font-weight: 600;
+}
+
+/* ===== ENHANCED CUSTOMERS PAGE STYLING (Dark Theme) ===== */
+
+/* Customer search panel */
+.dark-theme .customer-search-panel {
+    -fx-background-color: #353535;
+    -fx-border-color: #555555;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 15px;
+    -fx-spacing: 10px;
+}
+
+/* Customer info panel */
+.dark-theme .customer-info-panel {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 15px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 4, 0, 0, 2);
+}
+
+/* Vehicle info styling */
+.dark-theme .vehicle-info {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 10px;
+    -fx-spacing: 5px;
+}
+
+.dark-theme .vehicle-info .vehicle-make-model {
+    -fx-font-size: 1.1em;
+    -fx-font-weight: 600;
+    -fx-text-fill: #ffffff;
+}
+
+.dark-theme .vehicle-info .vehicle-details {
+    -fx-text-fill: #b0b0b0;
+    -fx-font-size: 0.9em;
+}
+
+/* ===== ENHANCED INVENTORY PAGE STYLING (Dark Theme) ===== */
+
+/* Inventory cards layout */
+.dark-theme .inventory-grid {
+    -fx-hgap: 15px;
+    -fx-vgap: 15px;
+    -fx-padding: 15px;
+}
+
+/* Product card enhanced styling */
+.dark-theme .product-card {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 15px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0, 0, 2);
+    -fx-min-width: 250px;
+    -fx-min-height: 200px;
+}
+
+.dark-theme .product-card:hover {
+    -fx-border-color: #4c84ff;
+    -fx-effect: dropshadow(gaussian, rgba(76,132,255,0.3), 8, 0, 0, 4);
+    -fx-cursor: hand;
+}
+
+.dark-theme .product-card .product-name {
+    -fx-font-size: 1.2em;
+    -fx-font-weight: 600;
+    -fx-text-fill: #ffffff;
+    -fx-wrap-text: true;
+}
+
+.dark-theme .product-card .product-manufacturer {
+    -fx-text-fill: #b0b0b0;
+    -fx-font-size: 0.95em;
+}
+
+.dark-theme .product-card .product-price {
+    -fx-font-size: 1.3em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #81c784;
+}
+
+.dark-theme .product-card .product-stock {
+    -fx-font-size: 0.9em;
+    -fx-font-weight: 500;
+}
+
+.dark-theme .product-card .stock-high {
+    -fx-text-fill: #81c784;
+}
+
+.dark-theme .product-card .stock-medium {
+    -fx-text-fill: #ffb74d;
+}
+
+.dark-theme .product-card .stock-low {
+    -fx-text-fill: #e57373;
+}
+
+/* ===== ENHANCED DASHBOARD STYLING (Dark Theme) ===== */
+
+/* Dashboard grid improvements */
+.dark-theme .dashboard-grid {
+    -fx-hgap: 20px;
+    -fx-vgap: 20px;
+    -fx-padding: 20px;
+}
+
+/* Dashboard section headers */
+.dark-theme .dashboard-section-header {
+    -fx-font-size: 1.3em;
+    -fx-font-weight: 600;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 0 0 10px 0;
+    -fx-border-color: transparent transparent #555555 transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+/* Enhanced appointment cards */
+.dark-theme .appointment-card {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 4, 0, 0, 2);
+    -fx-spacing: 6px;
+}
+
+.dark-theme .appointment-card .appointment-time {
+    -fx-font-weight: 600;
+    -fx-text-fill: #64b5f6;
+}
+
+.dark-theme .appointment-card .appointment-customer {
+    -fx-font-weight: 500;
+    -fx-text-fill: #ffffff;
+}
+
+.dark-theme .appointment-card .appointment-service {
+    -fx-text-fill: #b0b0b0;
+    -fx-font-size: 0.9em;
+}
+
+/* Status indicators */
+.dark-theme .status-confirmed {
+    -fx-text-fill: #81c784;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .status-pending {
+    -fx-text-fill: #ffb74d;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .status-cancelled {
+    -fx-text-fill: #e57373;
+    -fx-font-weight: 600;
+}
+
+.dark-theme .status-completed {
+    -fx-text-fill: #64b5f6;
+    -fx-font-weight: 600;
+}
+
+/* ===== ENHANCED FORM STYLING (Dark Theme) ===== */
+
+/* Form grid improvements */
+.dark-theme .form-grid {
+    -fx-hgap: 15px;
+    -fx-vgap: 12px;
+    -fx-padding: 20px;
+}
+
+.dark-theme .form-grid .label {
+    -fx-font-weight: 500;
+    -fx-text-fill: #e0e0e0;
+}
+
+/* Required field indicators */
+.dark-theme .required-field {
+    -fx-border-color: #4c84ff;
+    -fx-border-width: 2px;
+}
+
+.dark-theme .required-label::after {
+    -fx-text-fill: #e57373;
+    -fx-font-weight: bold;
+}
+
+/* Validation error styling */
+.dark-theme .error-field {
+    -fx-border-color: #e57373;
+    -fx-border-width: 2px;
+    -fx-background-color: #3d2626;
+}
+
+.dark-theme .error-text {
+    -fx-text-fill: #e57373;
+    -fx-font-size: 0.85em;
+    -fx-font-weight: 500;
+}
+
+/* Success styling */
+.dark-theme .success-field {
+    -fx-border-color: #81c784;
+    -fx-border-width: 2px;
+    -fx-background-color: #2d4d2f;
+}
+
+/* ===== ENHANCED PAGINATION STYLING (Dark Theme) ===== */
+
+.dark-theme .pagination {
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-theme .pagination .pagination-control {
+    -fx-background-color: #353535;
+    -fx-border-color: #555555;
+    -fx-text-fill: #e0e0e0;
+}
+
+.dark-theme .pagination .pagination-control:hover {
+    -fx-background-color: #404040;
+    -fx-border-color: #4c84ff;
+}
+
+.dark-theme .pagination .pagination-control.current-page {
+    -fx-background-color: #4c84ff;
+    -fx-text-fill: white;
+}
+
+/* ===== ENHANCED TOOLBAR STYLING (Dark Theme) ===== */
+
+.dark-theme .tool-bar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-padding: 10px;
+}
+
+.dark-theme .separator:vertical .line {
+    -fx-background-color: #555555;
+    -fx-border-color: #555555;
+}
+
+/* ===== ENHANCED TITLED PANE STYLING (Dark Theme) ===== */
+
+.dark-theme .titled-pane {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+.dark-theme .titled-pane > .title {
+    -fx-background-color: #353535;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: 600;
+    -fx-padding: 0.8em;
+}
+
+.dark-theme .titled-pane > .content {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+    -fx-padding: 0.8em;
+}
+
+.dark-theme .titled-pane:expanded > .title {
+    -fx-background-color: #4c84ff;
+}
+
+/* ===== ENHANCED SCROLL PANE STYLING (Dark Theme) ===== */
+
+.dark-theme .scroll-pane {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #404040;
+}
+
+.dark-theme .scroll-pane .viewport {
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-theme .scroll-pane .scroll-bar:vertical {
+    -fx-background-color: #353535;
+}
+
+.dark-theme .scroll-pane .scroll-bar:horizontal {
+    -fx-background-color: #353535;
+}
+
+.dark-theme .scroll-pane .scroll-bar .thumb {
+    -fx-background-color: #555555;
+    -fx-background-radius: 5px;
+}
+
+.dark-theme .scroll-pane .scroll-bar .thumb:hover {
+    -fx-background-color: #666666;
+}
+
+/* Chart container styling (Dark Theme with prefix) */
+.dark-theme .chart-container {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 10px;
+    -fx-padding: 20px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 3);
+}
+
+/* Activity feed and card content (Dark Theme with prefix) */
+.dark-theme .card-content {
+    -fx-background-color: #353535;
+    -fx-background-radius: 5px;
+    -fx-padding: 8px;
+    -fx-border-color: #505050;
+    -fx-border-radius: 5px;
+    -fx-border-width: 1px;
+}
+
+/* Status indicators (Dark Theme with prefix) */
+.dark-theme .status-good {
+    -fx-text-fill: #66bb6a;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .status-warning {
+    -fx-text-fill: #ffb74d;
+    -fx-font-weight: bold;
+}
+
+.dark-theme .status-error {
+    -fx-text-fill: #f44336;
+    -fx-font-weight: bold;
+}

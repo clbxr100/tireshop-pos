@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console appender for application logs -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- System properties to disable verbose logging -->
+    <property name="c3p0.debug" value="false"/>
+    <property name="c3p0.verbose" value="false"/>
+
+    <!-- Suppress verbose Hibernate logging -->
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="org.hibernate.type" level="WARN"/>
+    <logger name="org.hibernate.engine" level="WARN"/>
+    <logger name="org.hibernate.cfg" level="WARN"/>
+    <logger name="org.hibernate.tool" level="WARN"/>
+    <logger name="org.hibernate.validator" level="WARN"/>
+    
+    <!-- Suppress C3P0 connection pool logging -->
+    <logger name="com.mchange" level="ERROR"/>
+    <logger name="com.mchange.v2" level="ERROR"/>
+    <logger name="com.mchange.v2.c3p0" level="ERROR"/>
+    <logger name="com.mchange.v2.log" level="ERROR"/>
+    
+    <!-- Suppress SLF4J warnings -->
+    <logger name="org.slf4j" level="ERROR"/>
+    
+    <!-- Keep application logs at INFO level -->
+    <logger name="com.tireshop" level="INFO"/>
+    
+    <!-- Root logger -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

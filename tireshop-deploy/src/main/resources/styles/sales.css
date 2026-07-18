@@ -1,0 +1,179 @@
+/* Sales Screen Specific Styling */
+
+/* Sales table */
+.sales-table {
+    -fx-background-color: white;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 4px;
+}
+
+.sales-table .column-header {
+    -fx-background-color: #f8f9fa;
+    -fx-padding: 8px;
+    -fx-font-weight: bold;
+}
+
+.sales-table .table-row-cell:selected {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #333333;
+}
+
+/* Status indicators in sales table */
+.status-cell.paid {
+    -fx-text-fill: #4caf50;
+    -fx-font-weight: bold;
+}
+
+.status-cell.pending {
+    -fx-text-fill: #f39c12;
+    -fx-font-weight: bold;
+}
+
+/* Sale details section */
+.sale-details-pane {
+    -fx-background-color: white;
+    -fx-background-radius: 4px;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 4px;
+    -fx-padding: 15px;
+}
+
+.sale-details-pane .title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 10px 0;
+}
+
+/* Customer info section */
+.customer-info {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 4px;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 4px;
+    -fx-padding: 10px;
+}
+
+.customer-info .label {
+    -fx-text-fill: #555555;
+}
+
+.customer-info .value {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+/* Transaction summary */
+.transaction-summary {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 4px;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 4px;
+    -fx-padding: 10px;
+}
+
+.transaction-summary .label {
+    -fx-text-fill: #555555;
+}
+
+.transaction-summary .subtotal {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.transaction-summary .tax {
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.transaction-summary .total {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+/* Product/Service selection */
+.product-list {
+    -fx-background-color: white;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 4px;
+}
+
+.product-list .list-cell:selected {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #333333;
+}
+
+/* Quantity controls */
+.quantity-spinner {
+    -fx-pref-width: 100px;
+}
+
+/* Payment section */
+.payment-method-box {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 4px;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 4px;
+    -fx-padding: 10px;
+}
+
+.payment-method-box .radio-button {
+    -fx-padding: 5px;
+}
+
+.payment-method-box .radio-button:selected .radio {
+    -fx-background-color: #4c84ff;
+}
+
+/* Receipt preview */
+.receipt-preview {
+    -fx-background-color: white;
+    -fx-background-radius: 4px;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 4px;
+    -fx-padding: 15px;
+    -fx-font-family: 'Courier New', monospace;
+}
+
+.receipt-preview .header {
+    -fx-font-weight: bold;
+    -fx-text-alignment: center;
+    -fx-padding: 0 0 10px 0;
+}
+
+.receipt-preview .footer {
+    -fx-text-alignment: center;
+    -fx-padding: 10px 0 0 0;
+}
+
+/* Action buttons for sales */
+.complete-sale-button {
+    -fx-background-color: #4caf50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+}
+
+.complete-sale-button:hover {
+    -fx-background-color: #43a047;
+}
+
+.cancel-sale-button {
+    -fx-background-color: #f44336;
+    -fx-text-fill: white;
+    -fx-padding: 10px 20px;
+}
+
+.cancel-sale-button:hover {
+    -fx-background-color: #e53935;
+}
+
+.print-button {
+    -fx-background-color: #2196f3;
+    -fx-text-fill: white;
+    -fx-padding: 10px 20px;
+}
+
+.print-button:hover {
+    -fx-background-color: #1e88e5;
+} 

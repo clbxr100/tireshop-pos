@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <!-- These will be overridden by DatabaseManager from database.properties -->
+        <property name="hibernate.connection.driver_class">org.h2.Driver</property>
+        <property name="hibernate.connection.url">jdbc:h2:./tireshop_db</property>
+        <property name="hibernate.connection.username">sa</property>
+        <property name="hibernate.connection.password"></property>
+        <property name="hibernate.dialect">org.hibernate.dialect.H2Dialect</property>
+        
+        <!-- Connection pool settings -->
+        <property name="hibernate.connection.pool_size">10</property>
+        
+        <!-- Echo all executed SQL to stdout -->
+        <property name="hibernate.show_sql">false</property>
+        <property name="hibernate.format_sql">true</property>
+        
+        <!-- Reduce verbose logging -->
+        <property name="hibernate.jdbc.batch_size">20</property>
+        <property name="hibernate.order_inserts">true</property>
+        <property name="hibernate.order_updates">true</property>
+        <property name="hibernate.jdbc.batch_versioned_data">true</property>
+        
+        <!-- Update the database schema on startup -->
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        
+        <!-- Entity mappings -->
+        <mapping class="com.tireshop.model.Product"/>
+        <mapping class="com.tireshop.model.Customer"/>
+        <mapping class="com.tireshop.model.Vehicle"/>
+        <mapping class="com.tireshop.model.Service"/>
+        <mapping class="com.tireshop.model.Technician"/>
+        <mapping class="com.tireshop.model.Sale"/>
+        <mapping class="com.tireshop.model.SaleItem"/>
+        <mapping class="com.tireshop.model.Appointment"/>
+        <mapping class="com.tireshop.model.User"/>
+        <mapping class="com.tireshop.model.TimeEntry"/>
+        <mapping class="com.tireshop.model.ServiceRecord"/>
+        <mapping class="com.tireshop.model.TireData"/>
+    </session-factory>
+</hibernate-configuration> 

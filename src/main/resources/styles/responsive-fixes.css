@@ -1,0 +1,113 @@
+/* Responsive Fixes - Disable Problematic Complex Scaling */
+/* This file removes overly complex responsive rules that cause text display conflicts */
+
+/* ===== DISABLE COMPLEX ROOT FONT SCALING ===== */
+/* Reset root font scaling to prevent cascading conflicts */
+.root,
+.root.small-screen,
+.root.medium-screen,
+.root.large-screen,
+.root.extra-large-screen,
+.root.ultra-wide-screen,
+.root.high-dpi,
+.root.ultra-high-dpi {
+    -fx-font-size: 12px !important; /* Use fixed base font size */
+}
+
+/* ===== DISABLE COMPLEX TABLE CELL SCALING ===== */
+/* Remove responsive table cell font scaling that causes conflicts */
+.root.small-screen .table-view .table-cell,
+.root.medium-screen .table-view .table-cell,
+.root.large-screen .table-view .table-cell,
+.root.extra-large-screen .table-view .table-cell,
+.root.ultra-wide-screen .table-view .table-cell {
+    -fx-font-size: 11px !important; /* Use consistent table cell font size */
+    -fx-padding: 4px 8px !important; /* Use consistent padding */
+}
+
+/* ===== DISABLE COMPLEX BUTTON SCALING ===== */
+/* Simplify button scaling */
+.root.small-screen .button,
+.root.medium-screen .button,
+.root.large-screen .button,
+.root.extra-large-screen .button,
+.root.ultra-wide-screen .button {
+    -fx-font-size: 11px !important;
+    -fx-padding: 6px 12px !important;
+}
+
+/* ===== DISABLE COMPLEX FORM CONTROL SCALING ===== */
+/* Simplify form control scaling */
+.root.small-screen .text-field,
+.root.small-screen .text-area,
+.root.small-screen .combo-box-base,
+.root.small-screen .choice-box,
+.root.medium-screen .text-field,
+.root.medium-screen .text-area,
+.root.medium-screen .combo-box-base,
+.root.medium-screen .choice-box,
+.root.large-screen .text-field,
+.root.large-screen .text-area,
+.root.large-screen .combo-box-base,
+.root.large-screen .choice-box,
+.root.extra-large-screen .text-field,
+.root.extra-large-screen .text-area,
+.root.extra-large-screen .combo-box-base,
+.root.extra-large-screen .choice-box,
+.root.ultra-wide-screen .text-field,
+.root.ultra-wide-screen .text-area,
+.root.ultra-wide-screen .combo-box-base,
+.root.ultra-wide-screen .choice-box {
+    -fx-font-size: 11px !important;
+    -fx-padding: 6px 8px !important;
+}
+
+/* ===== DISABLE PROBLEMATIC SALES CSS SCALING ===== */
+/* Override sales.css responsive rules that conflict with table fixes */
+.small-screen .sales-table .column-header,
+.small-screen .sales-table .table-row-cell,
+.small-screen .sales-summary-title,
+.small-screen .sales-summary-value {
+    -fx-font-size: inherit !important;
+}
+
+/* ===== ENSURE CONSISTENT TEXT RENDERING ===== */
+/* Force consistent font family and rendering across all components */
+* {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif !important;
+    -fx-font-smoothing-type: gray !important;
+}
+
+/* Ensure labels have consistent sizing */
+.label {
+    -fx-font-size: 11px !important;
+}
+
+/* Ensure headers are appropriately sized */
+.table-view .column-header .label {
+    -fx-font-size: 12px !important;
+    -fx-font-weight: bold !important;
+}
+
+/* ===== DARK THEME CONSISTENCY ===== */
+/* Apply the same fixes to dark theme variants */
+.dark-theme.root,
+.dark-theme.root.small-screen,
+.dark-theme.root.medium-screen,
+.dark-theme.root.large-screen,
+.dark-theme.root.extra-large-screen,
+.dark-theme.root.ultra-wide-screen,
+.dark-theme.root.high-dpi,
+.dark-theme.root.ultra-high-dpi {
+    -fx-font-size: 12px !important;
+}
+
+.dark-theme .table-view .table-cell,
+.dark-theme.root.small-screen .table-view .table-cell,
+.dark-theme.root.medium-screen .table-view .table-cell,
+.dark-theme.root.large-screen .table-view .table-cell,
+.dark-theme.root.extra-large-screen .table-view .table-cell,
+.dark-theme.root.ultra-wide-screen .table-view .table-cell {
+    -fx-font-size: 11px !important;
+    -fx-padding: 4px 8px !important;
+} 

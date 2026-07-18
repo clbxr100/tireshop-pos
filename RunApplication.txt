@@ -1,0 +1,27 @@
+Tire Shop POS - How to Run
+
+1. Make sure you have Java installed:
+   - Download Java from: https://adoptium.net/ (Eclipse Temurin JDK 17 is recommended)
+   - During installation, make sure to check the option to add Java to your PATH
+
+2. Make sure you have Maven installed:
+   - Download Maven from: https://maven.apache.org/download.cgi
+   - Follow installation instructions at: https://maven.apache.org/install.html
+   - Add Maven bin directory to your PATH
+
+3. After installing Java and Maven, you can run the application:
+   - Open a command prompt
+   - Navigate to the project directory: cd C:\Users\chris\Desktop\pos
+   - Run the command: mvn exec:java
+
+4. Alternative ways to run:
+   - From IDE: Open the project in IntelliJ or Eclipse and run the Main class
+   - Using compiled classes: 
+     java -cp target/classes com.tireshop.Main
+
+If you're still having issues:
+1. Make sure Java is in your PATH by running: echo %JAVA_HOME%
+2. Make sure Maven is in your PATH by running: mvn -version
+
+For Cursor users:
+If you're using Cursor, you can run the application directly from Cursor's integrated terminal. 
