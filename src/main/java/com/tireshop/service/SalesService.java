@@ -499,6 +499,19 @@ public class SalesService {
      * @return The new balance, or empty if the payment was invalid
      */
     public Optional<BigDecimal> recordChargeAccountPayment(Long customerId, BigDecimal amount) {
+        return recordChargeAccountPaymentDetailed(customerId, amount)
+                .map(ChargeAccountPayment::getBalanceAfter);
+    }
+
+    /**
+     * Record a payment against a customer's store charge balance, returning the
+     * persisted payment record (for receipts).
+     *
+     * @param customerId Customer ID
+     * @param amount Payment amount (must be positive, capped at the balance)
+     * @return The payment record, or empty if the payment was invalid
+     */
+    public Optional<ChargeAccountPayment> recordChargeAccountPaymentDetailed(Long customerId, BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             return Optional.empty();
         }
@@ -526,7 +539,7 @@ public class SalesService {
 
         System.out.println("[SalesService] Charge account payment: $" + applied + " from "
                 + customer.getFullName() + " (remaining balance: $" + customer.getChargeBalance() + ")");
-        return Optional.of(customer.getChargeBalance());
+        return Optional.of(accountPayment);
     }
 
     /**

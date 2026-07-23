@@ -72,6 +72,13 @@ public class SalesController {
     private Button nextPageBtn;
     private Label pageLabel;
 
+    // Sales list filter state (preserved across auto-refresh)
+    private TextField salesSearchField;
+    private DatePicker salesFromDatePicker;
+    private DatePicker salesToDatePicker;
+    private Label salesStatusLabel;
+    private boolean salesFilterActive = false;
+
     private static final Logger LOGGER = Logger.getLogger(SalesController.class.getName());
     
     public SalesController(SalesService salesService, 
@@ -731,9 +738,9 @@ public class SalesController {
         searchAndFilters.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         
         // Search field
-        TextField searchField = new TextField();
-        searchField.setPromptText("Search by invoice #, customer name...");
-        searchField.setPrefWidth(200);
+        this.salesSearchField = new TextField();
+        salesSearchField.setPromptText("Search by invoice #, customer name...");
+        salesSearchField.setPrefWidth(200);
         
         Button searchBtn = new Button("Search");
         searchBtn.getStyleClass().add("secondary");
@@ -743,13 +750,13 @@ public class SalesController {
         
         // Date range filters
         Label dateLabel = new Label("Date Range:");
-        DatePicker fromDate = new DatePicker();
-        fromDate.setPromptText("From");
-        fromDate.setPrefWidth(120);
-        
-        DatePicker toDate = new DatePicker();
-        toDate.setPromptText("To");
-        toDate.setPrefWidth(120);
+        this.salesFromDatePicker = new DatePicker();
+        salesFromDatePicker.setPromptText("From");
+        salesFromDatePicker.setPrefWidth(120);
+
+        this.salesToDatePicker = new DatePicker();
+        salesToDatePicker.setPromptText("To");
+        salesToDatePicker.setPrefWidth(120);
         
         Button filterBtn = new Button("Filter");
         filterBtn.getStyleClass().add("secondary");
@@ -765,9 +772,9 @@ public class SalesController {
         allBtn.getStyleClass().addAll("secondary", "quick-filter");
         
         searchAndFilters.getChildren().addAll(
-            searchField, searchBtn, clearBtn,
+            salesSearchField, searchBtn, clearBtn,
             new Separator(javafx.geometry.Orientation.VERTICAL),
-            dateLabel, fromDate, toDate, filterBtn,
+            dateLabel, salesFromDatePicker, salesToDatePicker, filterBtn,
             new Separator(javafx.geometry.Orientation.VERTICAL),
             todayBtn, weekBtn, allBtn
         );
@@ -819,6 +826,7 @@ public class SalesController {
         
         Label statusLabel = new Label("All Sales");
         statusLabel.getStyleClass().add("status-label");
+        this.salesStatusLabel = statusLabel;
         
         this.countLabel = new Label("0 sales shown");
         this.countLabel.getStyleClass().add("count-label");
@@ -846,85 +854,44 @@ public class SalesController {
         controlsContainer.getChildren().addAll(searchAndFilters, actionButtons, statusRow);
         
         // Search functionality
-        searchBtn.setOnAction(e -> {
-            String searchTerm = searchField.getText().trim();
-            if (!searchTerm.isEmpty()) {
-                List<Sale> allSales = salesService.getAllSales();
-                List<Sale> filteredSales = allSales.stream()
-                    .filter(sale -> 
-                        (sale.getInvoiceNumber() != null && sale.getInvoiceNumber().toLowerCase().contains(searchTerm.toLowerCase())) ||
-                        (sale.getCustomer() != null && 
-                         sale.getCustomer().getFullName().toLowerCase().contains(searchTerm.toLowerCase()))
-                    )
-                    .collect(java.util.stream.Collectors.toList());
-                
-                salesList = FXCollections.observableArrayList(filteredSales);
-                salesTable.setItems(salesList);
-                statusLabel.setText("Search: \"" + searchTerm + "\"");
-                this.countLabel.setText(filteredSales.size() + " sales found");
-            }
-        });
-        
+        searchBtn.setOnAction(e -> applySalesListFilters());
+
         clearBtn.setOnAction(e -> {
-            searchField.clear();
-            fromDate.setValue(null);
-            toDate.setValue(null);
+            salesSearchField.clear();
+            salesFromDatePicker.setValue(null);
+            salesToDatePicker.setValue(null);
+            salesFilterActive = false;
             refreshSales();
-            statusLabel.setText("All Sales");
+            salesStatusLabel.setText("All Sales");
         });
-        
+
         // Date filtering
-        filterBtn.setOnAction(e -> {
-            if (fromDate.getValue() != null || toDate.getValue() != null) {
-                List<Sale> allSales = salesService.getAllSales();
-                List<Sale> filteredSales = allSales.stream()
-                    .filter(sale -> {
-                        LocalDate saleDate = sale.getTimestamp().toLocalDate();
-                        boolean afterFrom = fromDate.getValue() == null || !saleDate.isBefore(fromDate.getValue());
-                        boolean beforeTo = toDate.getValue() == null || !saleDate.isAfter(toDate.getValue());
-                        return afterFrom && beforeTo;
-                    })
-                    .collect(java.util.stream.Collectors.toList());
-                
-                salesList = FXCollections.observableArrayList(filteredSales);
-                salesTable.setItems(salesList);
-                
-                String dateRange = "";
-                if (fromDate.getValue() != null && toDate.getValue() != null) {
-                    dateRange = fromDate.getValue() + " to " + toDate.getValue();
-                } else if (fromDate.getValue() != null) {
-                    dateRange = "from " + fromDate.getValue();
-                } else {
-                    dateRange = "to " + toDate.getValue();
-                }
-                statusLabel.setText("Filtered: " + dateRange);
-                this.countLabel.setText(filteredSales.size() + " sales found");
-            }
-        });
-        
+        filterBtn.setOnAction(e -> applySalesListFilters());
+
         // Quick filters
         todayBtn.setOnAction(e -> {
             LocalDate today = LocalDate.now();
-            fromDate.setValue(today);
-            toDate.setValue(today);
-            filterBtn.fire();
+            salesFromDatePicker.setValue(today);
+            salesToDatePicker.setValue(today);
+            applySalesListFilters();
         });
-        
+
         weekBtn.setOnAction(e -> {
             LocalDate today = LocalDate.now();
-            fromDate.setValue(today.minusDays(7));
-            toDate.setValue(today);
-            filterBtn.fire();
+            salesFromDatePicker.setValue(today.minusDays(7));
+            salesToDatePicker.setValue(today);
+            applySalesListFilters();
         });
-        
+
         allBtn.setOnAction(e -> {
             clearBtn.fire();
         });
-        
+
         refreshBtn.setOnAction(e -> {
             currentPage = 0;
+            salesFilterActive = false;
             refreshSales();
-            statusLabel.setText("All Sales");
+            salesStatusLabel.setText("All Sales");
         });
 
         // Pagination button handlers
@@ -1232,9 +1199,109 @@ public class SalesController {
     }
     
     /**
+     * Apply the current search/date filters to the sales list.
+     * Used both by the filter buttons and by refreshSales() so that
+     * auto-refresh keeps the user's filter instead of wiping it.
+     * @return true if a filter was applied, false if no filter criteria set
+     */
+    private boolean applySalesListFilters() {
+        String searchTerm = salesSearchField != null && salesSearchField.getText() != null
+                ? salesSearchField.getText().trim().toLowerCase() : "";
+        LocalDate from = salesFromDatePicker != null ? salesFromDatePicker.getValue() : null;
+        LocalDate to = salesToDatePicker != null ? salesToDatePicker.getValue() : null;
+
+        boolean hasSearch = !searchTerm.isEmpty();
+        boolean hasDates = from != null || to != null;
+
+        if (!hasSearch && !hasDates) {
+            salesFilterActive = false;
+            refreshSales();
+            if (salesStatusLabel != null) {
+                salesStatusLabel.setText("All Sales");
+            }
+            return false;
+        }
+
+        // Remember selection so re-applying the filter doesn't lose it
+        Sale selected = salesTable != null ? salesTable.getSelectionModel().getSelectedItem() : null;
+        Long selectedId = selected != null ? selected.getId() : null;
+
+        List<Sale> allSales = salesService.getAllSales();
+        List<Sale> filteredSales = allSales.stream()
+            .filter(sale -> {
+                if (hasSearch) {
+                    boolean matchesInvoice = sale.getInvoiceNumber() != null
+                            && sale.getInvoiceNumber().toLowerCase().contains(searchTerm);
+                    boolean matchesCustomer = sale.getCustomer() != null
+                            && sale.getCustomer().getFullName() != null
+                            && sale.getCustomer().getFullName().toLowerCase().contains(searchTerm);
+                    if (!matchesInvoice && !matchesCustomer) {
+                        return false;
+                    }
+                }
+                if (hasDates && sale.getTimestamp() != null) {
+                    LocalDate saleDate = sale.getTimestamp().toLocalDate();
+                    if (from != null && saleDate.isBefore(from)) {
+                        return false;
+                    }
+                    if (to != null && saleDate.isAfter(to)) {
+                        return false;
+                    }
+                }
+                return true;
+            })
+            .collect(java.util.stream.Collectors.toList());
+
+        salesList = FXCollections.observableArrayList(filteredSales);
+        salesTable.setItems(salesList);
+
+        // Restore selection if the sale still matches the filter
+        if (selectedId != null) {
+            for (Sale s : salesList) {
+                if (s.getId() != null && s.getId().equals(selectedId)) {
+                    salesTable.getSelectionModel().select(s);
+                    break;
+                }
+            }
+        }
+
+        // Build status text describing the active filter(s)
+        StringBuilder status = new StringBuilder("Filtered: ");
+        if (hasSearch) {
+            status.append("\"").append(salesSearchField.getText().trim()).append("\"");
+        }
+        if (hasDates) {
+            if (hasSearch) {
+                status.append(" + ");
+            }
+            if (from != null && to != null) {
+                status.append(from).append(" to ").append(to);
+            } else if (from != null) {
+                status.append("from ").append(from);
+            } else {
+                status.append("to ").append(to);
+            }
+        }
+        if (salesStatusLabel != null) {
+            salesStatusLabel.setText(status.toString());
+        }
+        this.countLabel.setText(filteredSales.size() + " sales found");
+
+        salesFilterActive = true;
+        return true;
+    }
+
+    /**
      * Refresh the sales list
      */
     public void refreshSales() {
+        // If the user has an active search/date filter, re-apply it instead
+        // of resetting to the unfiltered paginated view
+        if (salesFilterActive) {
+            applySalesListFilters();
+            return;
+        }
+
         // Remember the current selection so auto-refresh doesn't lose it
         Sale selected = salesTable != null ? salesTable.getSelectionModel().getSelectedItem() : null;
         Long selectedId = selected != null ? selected.getId() : null;

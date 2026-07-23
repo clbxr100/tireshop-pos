@@ -73,8 +73,73 @@ public class PaymentController {
         
         Label instructionLabel = new Label("Choose a payment method:");
         instructionLabel.setStyle("-fx-font-size: 14px;");
-        
-        content.getChildren().addAll(totalLabel, amountLabel, taxLabel, instructionLabel);
+
+        // Military discount toggle (percent configured in Admin settings)
+        Label discountLabel = new Label();
+        discountLabel.setStyle("-fx-text-fill: #c0392b; -fx-font-weight: bold;");
+        Button militaryDiscountBtn = new Button();
+        militaryDiscountBtn.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 14; -fx-background-radius: 6px; -fx-cursor: hand;");
+        HBox discountRow = new HBox(10);
+        discountRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        discountRow.getChildren().addAll(militaryDiscountBtn, discountLabel);
+
+        // Syncs the discount row and totals display with the sale's current state
+        Runnable refreshDiscountRow = () -> {
+            BigDecimal discount = sale.getDiscountAmount() != null ? sale.getDiscountAmount() : BigDecimal.ZERO;
+            if (discount.compareTo(BigDecimal.ZERO) > 0) {
+                militaryDiscountBtn.setText("🎖 Remove Military Discount");
+                String reason = sale.getDiscountReason() != null ? sale.getDiscountReason() : "Discount";
+                discountLabel.setText(reason + ": -$" + formatCurrency(discount));
+            } else {
+                BigDecimal percent = settingsService != null ? settingsService.getMilitaryDiscountPercent() : BigDecimal.ZERO;
+                militaryDiscountBtn.setText("🎖 Apply Military Discount ("
+                        + (percent != null ? percent.stripTrailingZeros().toPlainString() : "0") + "%)");
+                discountLabel.setText("");
+            }
+            BigDecimal total = sale.getTotal() != null ? sale.getTotal() : BigDecimal.ZERO;
+            amountLabel.setText("$" + formatCurrency(total));
+            if (sale.getCustomer() != null && sale.getCustomer().isTaxExempt()) {
+                taxLabel.setText("Tax Exempt Customer - No Tax Applied");
+                taxLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
+            } else if (sale.getTax() != null && sale.getTax().compareTo(BigDecimal.ZERO) > 0) {
+                taxLabel.setText("Tax: $" + formatCurrency(sale.getTax()));
+                taxLabel.setStyle("-fx-text-fill: #7f8c8d;");
+            } else {
+                taxLabel.setText("");
+            }
+        };
+
+        // Only show the row when a discount is configured or already applied
+        BigDecimal milPercent = settingsService != null ? settingsService.getMilitaryDiscountPercent() : BigDecimal.ZERO;
+        boolean discountAvailable = milPercent != null && milPercent.compareTo(BigDecimal.ZERO) > 0;
+        boolean discountApplied = sale.getDiscountAmount() != null
+                && sale.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0;
+        discountRow.setVisible(discountAvailable || discountApplied);
+        discountRow.setManaged(discountRow.isVisible());
+        refreshDiscountRow.run();
+
+        militaryDiscountBtn.setOnAction(e -> {
+            boolean hasDiscount = sale.getDiscountAmount() != null
+                    && sale.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0;
+            Optional<Sale> updated = hasDiscount
+                    ? salesService.removeDiscount(sale.getId())
+                    : salesService.applyMilitaryDiscount(sale.getId());
+            if (updated.isPresent()) {
+                // Copy the recalculated amounts onto the dialog's sale object so
+                // the payment method handlers charge the discounted total
+                Sale u = updated.get();
+                sale.setSubtotal(u.getSubtotal());
+                sale.setTax(u.getTax());
+                sale.setTotal(u.getTotal());
+                sale.setDiscountAmount(u.getDiscountAmount());
+                sale.setDiscountReason(u.getDiscountReason());
+                refreshDiscountRow.run();
+            } else {
+                showAlert("Discount Error", "Could not update the discount for this sale.", Alert.AlertType.WARNING);
+            }
+        });
+
+        content.getChildren().addAll(totalLabel, amountLabel, taxLabel, discountRow, instructionLabel);
         dialog.getDialogPane().setContent(content);
         
         // Create custom buttons for each payment type

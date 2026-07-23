@@ -32,6 +32,8 @@ import com.tireshop.service.SalesService;
 import com.tireshop.service.AppointmentService;
 import com.tireshop.util.DatabaseManager;
 import com.tireshop.util.SettingsService;
+import com.tireshop.util.PrinterService;
+import javafx.stage.FileChooser;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -103,6 +105,7 @@ public class MainView {
     private UserService userService;
     private VehicleServiceHistoryService vehicleServiceHistoryService;
     private EmailService emailService;
+    private PrinterService printerService;
     private com.tireshop.service.DailyReportService dailyReportService;
     private User currentUser;
     
@@ -1278,11 +1281,9 @@ public class MainView {
 
         Button chargePaymentBtn = new Button("💵 Record Charge Payment");
         chargePaymentBtn.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
-        chargePaymentBtn.setDisable(true);
 
         Button chargeHistoryBtn = new Button("📜 Charge History");
         chargeHistoryBtn.setStyle("-fx-background-color: #6c757d; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
-        chargeHistoryBtn.setDisable(true);
 
         controls.getChildren().addAll(addCustomerBtn, editCustomerBtn, deleteCustomerBtn, chargePaymentBtn, chargeHistoryBtn, searchCustomerField, searchCustomerBtn);
         headerSection.getChildren().addAll(headerTitle, controls);
@@ -1387,13 +1388,9 @@ public class MainView {
             if (newSelection != null) {
                 refreshVehicleTable(this.vehicleTable, vehicleDao, newSelection.getId());
                 addVehicleBtn.setDisable(false); editVehicleBtn.setDisable(false); deleteVehicleBtn.setDisable(false); serviceHistoryBtn.setDisable(false);
-                chargePaymentBtn.setDisable(newSelection.getChargeBalance().compareTo(java.math.BigDecimal.ZERO) <= 0);
-                chargeHistoryBtn.setDisable(false);
             } else {
                 this.vehicleTable.getItems().clear();
                 addVehicleBtn.setDisable(true); editVehicleBtn.setDisable(true); deleteVehicleBtn.setDisable(true); serviceHistoryBtn.setDisable(true);
-                chargePaymentBtn.setDisable(true);
-                chargeHistoryBtn.setDisable(true);
             }
         });
 
@@ -1401,6 +1398,11 @@ public class MainView {
         chargePaymentBtn.setOnAction(e -> {
             Customer selected = this.customerTable.getSelectionModel().getSelectedItem();
             if (selected == null) {
+                showAlert("No Selection", "Please select a customer to record a charge payment.", Alert.AlertType.WARNING);
+                return;
+            }
+            if (selected.getChargeBalance() == null || selected.getChargeBalance().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                showAlert("No Balance Due", selected.getFullName() + " has no outstanding charge balance.", Alert.AlertType.INFORMATION);
                 return;
             }
             showChargeAccountPaymentDialog(selected);
@@ -1410,7 +1412,7 @@ public class MainView {
             Customer selected = this.customerTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 showChargeHistoryDialog(selected);
-            }
+            } else showAlert("No Selection", "Please select a customer to view charge history.", Alert.AlertType.WARNING);
         });
         addCustomerBtn.setOnAction(e -> {
             showAddCustomerDialog(); 
@@ -1765,17 +1767,90 @@ public class MainView {
 
         Optional<java.math.BigDecimal> result = dialog.showAndWait();
         result.ifPresent(amount -> {
-            Optional<java.math.BigDecimal> newBalance = salesService.recordChargeAccountPayment(customer.getId(), amount);
-            if (newBalance.isPresent()) {
-                String message = String.format("Payment of $%.2f recorded.\nNew balance: $%.2f", amount.min(balance), newBalance.get());
-                if (amount.compareTo(balance) > 0) {
-                    message += String.format("\n\nChange due to customer: $%.2f", amount.subtract(balance));
+            Optional<com.tireshop.model.ChargeAccountPayment> paymentRecord =
+                    salesService.recordChargeAccountPaymentDetailed(customer.getId(), amount);
+            if (paymentRecord.isPresent()) {
+                com.tireshop.model.ChargeAccountPayment payment = paymentRecord.get();
+                java.math.BigDecimal newBalance = payment.getBalanceAfter() != null
+                        ? payment.getBalanceAfter() : java.math.BigDecimal.ZERO;
+                java.math.BigDecimal changeDue = amount.compareTo(balance) > 0
+                        ? amount.subtract(balance) : null;
+                String message = String.format("Payment of $%.2f recorded.\nNew balance: $%.2f", amount.min(balance), newBalance);
+                if (changeDue != null) {
+                    message += String.format("\n\nChange due to customer: $%.2f", changeDue);
                 }
                 showAlert("Payment Recorded", message, Alert.AlertType.INFORMATION);
+                // Offer to print or save a receipt for the payment
+                showChargePaymentReceiptOptions(payment, customer);
             } else {
                 showAlert("Invalid Payment", "Please enter a valid payment amount greater than $0.", Alert.AlertType.WARNING);
             }
         });
+    }
+
+    /**
+     * Lazily create the printer service (needs a SettingsService for company info).
+     */
+    private PrinterService getPrinterService() {
+        if (printerService == null) {
+            printerService = new PrinterService(new SettingsService());
+        }
+        return printerService;
+    }
+
+    /**
+     * After a charge account payment, let the cashier print a receipt
+     * or save it as a PDF for the customer.
+     */
+    private void showChargePaymentReceiptOptions(com.tireshop.model.ChargeAccountPayment payment, Customer customer) {
+        Dialog<Void> receiptDialog = new Dialog<>();
+        receiptDialog.setTitle("Payment Receipt");
+        receiptDialog.setHeaderText("Print a receipt for this payment?");
+        receiptDialog.initOwner(stage);
+
+        ButtonType printButtonType = new ButtonType("🖨 Print Receipt", ButtonBar.ButtonData.OK_DONE);
+        ButtonType pdfButtonType = new ButtonType("💾 Save PDF", ButtonBar.ButtonData.APPLY);
+        receiptDialog.getDialogPane().getButtonTypes().addAll(printButtonType, pdfButtonType, ButtonType.CLOSE);
+
+        String summary = String.format(
+                "Customer: %s%nPayment: $%.2f%nBalance After: $%.2f%nDate: %s",
+                customer.getFullName(),
+                payment.getAmount() != null ? payment.getAmount() : java.math.BigDecimal.ZERO,
+                payment.getBalanceAfter() != null ? payment.getBalanceAfter() : java.math.BigDecimal.ZERO,
+                payment.getPaymentTimestamp() != null
+                        ? payment.getPaymentTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a")) : "");
+        Label summaryLabel = new Label(summary);
+        summaryLabel.setStyle("-fx-font-size: 13px; -fx-padding: 10;");
+        receiptDialog.getDialogPane().setContent(summaryLabel);
+
+        // Keep the dialog open after Print/Save so the cashier can do both
+        Button printButton = (Button) receiptDialog.getDialogPane().lookupButton(printButtonType);
+        printButton.addEventFilter(ActionEvent.ACTION, event -> {
+            boolean success = getPrinterService().printChargePaymentReceipt(payment, customer, null);
+            showAlert(success ? "Print Sent" : "Print Failed",
+                    success ? "The payment receipt was sent to the printer."
+                            : "Could not print the receipt. Check the printer connection.",
+                    success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
+            event.consume(); // keep dialog open
+        });
+        Button pdfButton = (Button) receiptDialog.getDialogPane().lookupButton(pdfButtonType);
+        pdfButton.addEventFilter(ActionEvent.ACTION, event -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save Payment Receipt PDF");
+            fileChooser.setInitialFileName("payment-receipt-" + (payment.getId() != null ? payment.getId() : "receipt") + ".pdf");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+            java.io.File file = fileChooser.showSaveDialog(stage);
+            if (file != null) {
+                boolean success = getPrinterService().generateChargePaymentPdf(payment, customer, file.getAbsolutePath());
+                showAlert(success ? "PDF Saved" : "Save Failed",
+                        success ? "Receipt saved to:\n" + file.getAbsolutePath()
+                                : "Could not save the PDF. Check the file path and try again.",
+                        success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
+            }
+            event.consume(); // keep dialog open
+        });
+
+        receiptDialog.showAndWait();
     }
 
     /**
@@ -1794,6 +1869,8 @@ public class MainView {
 
         // Merge charges and payments into one dated activity list
         List<String[]> rows = new ArrayList<>();
+        // Parallel list: payment record for each row (null for charge rows)
+        List<com.tireshop.model.ChargeAccountPayment> rowPayments = new ArrayList<>();
         for (com.tireshop.model.SalePayment charge : activity.charges) {
             String invoice = charge.getSale() != null && charge.getSale().getInvoiceNumber() != null
                     ? charge.getSale().getInvoiceNumber() : "?";
@@ -1802,6 +1879,7 @@ public class MainView {
                             ? charge.getPaymentTimestamp().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "",
                     "Charge - Invoice " + invoice,
                     String.format("$%.2f", charge.getAmount()), ""});
+            rowPayments.add(null);
         }
         for (com.tireshop.model.ChargeAccountPayment payment : activity.payments) {
             String description = payment.getNotes() != null && !payment.getNotes().trim().isEmpty()
@@ -1815,8 +1893,23 @@ public class MainView {
                     description,
                     amountText,
                     payment.getBalanceAfter() != null ? String.format("$%.2f", payment.getBalanceAfter()) : ""});
+            rowPayments.add(payment);
         }
-        rows.sort((a, b) -> b[0].compareTo(a[0]));
+        // Sort newest first, keeping the payment records aligned with their rows
+        final List<String[]> rowsForSort = rows;
+        List<Integer> order = new ArrayList<>();
+        for (int i = 0; i < rowsForSort.size(); i++) {
+            order.add(i);
+        }
+        order.sort((a, b) -> rowsForSort.get(b)[0].compareTo(rowsForSort.get(a)[0]));
+        List<String[]> sortedRows = new ArrayList<>();
+        List<com.tireshop.model.ChargeAccountPayment> sortedPayments = new ArrayList<>();
+        for (int idx : order) {
+            sortedRows.add(rowsForSort.get(idx));
+            sortedPayments.add(rowPayments.get(idx));
+        }
+        rows = sortedRows;
+        rowPayments = sortedPayments;
 
         VBox content = new VBox(10);
         content.setPadding(new Insets(15));
@@ -1845,6 +1938,29 @@ public class MainView {
             table.setItems(FXCollections.observableArrayList(rows));
             table.setStyle("-fx-font-size: 12px;");
             content.getChildren().add(table);
+
+            // Reprint a receipt for a selected payment row
+            List<com.tireshop.model.ChargeAccountPayment> finalRowPayments = rowPayments;
+            Button printPaymentBtn = new Button("🖨 Print Payment Receipt");
+            printPaymentBtn.setStyle("-fx-background-color: #2980b9; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 12; -fx-background-radius: 6px; -fx-cursor: hand;");
+            printPaymentBtn.setDisable(true);
+            printPaymentBtn.setOnAction(e -> {
+                int idx = table.getSelectionModel().getSelectedIndex();
+                if (idx >= 0 && idx < finalRowPayments.size() && finalRowPayments.get(idx) != null) {
+                    showChargePaymentReceiptOptions(finalRowPayments.get(idx), customer);
+                }
+            });
+            table.getSelectionModel().selectedIndexProperty().addListener((obs, oldIdx, newIdx) -> {
+                int idx = newIdx.intValue();
+                printPaymentBtn.setDisable(idx < 0 || idx >= finalRowPayments.size() || finalRowPayments.get(idx) == null);
+            });
+            HBox tableButtons = new HBox(10);
+            tableButtons.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            tableButtons.getChildren().add(printPaymentBtn);
+            Label printHint = new Label("Select a payment row to reprint its receipt.");
+            printHint.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 11px;");
+            tableButtons.getChildren().add(printHint);
+            content.getChildren().add(tableButtons);
         }
 
         dialog.getDialogPane().setContent(content);

@@ -3,6 +3,8 @@ package com.tireshop.util;
 import com.tireshop.model.Sale;
 import com.tireshop.model.SaleItem;
 import com.tireshop.model.Product;
+import com.tireshop.model.Customer;
+import com.tireshop.model.ChargeAccountPayment;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -156,7 +158,175 @@ public class PrinterService {
         String printerToUse = (targetPrinterName != null) ? targetPrinterName : this.defaultPrinterName;
         return printString(receipt, printerToUse);
     }
-    
+
+    /**
+     * Print a receipt for a store charge account payment (payoff).
+     * @param payment The recorded payment
+     * @param customer The customer who made the payment
+     * @param targetPrinterName Optional printer name, null for default printer
+     * @return true if printed successfully
+     */
+    public boolean printChargePaymentReceipt(ChargeAccountPayment payment, Customer customer, String targetPrinterName) {
+        String receipt = generateChargePaymentReceiptContent(payment, customer);
+
+        // Try direct network printing first (port 9100)
+        if (useRemotePrinting) {
+            LOGGER.info("[PrinterService] Attempting direct network printing to printer at " + remotePrintServerIP + ":9100");
+            if (sendDirectPrintJob(receipt)) {
+                LOGGER.info("[PrinterService] Direct network printing successful");
+                return true;
+            } else {
+                LOGGER.warning("[PrinterService] Direct network printing failed, trying HTTP print server");
+                if (sendRemotePrintJob(receipt, targetPrinterName)) {
+                    LOGGER.info("[PrinterService] HTTP remote printing successful");
+                    return true;
+                } else {
+                    LOGGER.warning("[PrinterService] Both network printing methods failed, falling back to local printing");
+                }
+            }
+        }
+
+        // Fallback to local printing
+        String printerToUse = (targetPrinterName != null) ? targetPrinterName : this.defaultPrinterName;
+        return printString(receipt, printerToUse);
+    }
+
+    /**
+     * Generate the plain-text content of a charge account payment receipt
+     * (thermal-printer width, same style as sale receipts).
+     */
+    private String generateChargePaymentReceiptContent(ChargeAccountPayment payment, Customer customer) {
+        if (payment == null) {
+            LOGGER.warning("[PrinterService] Cannot generate payment receipt: payment is null");
+            return "ERROR: Invalid payment data";
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        String companyName = settingsService != null ? settingsService.getCompanyName() : "POS System";
+        String companyAddress = settingsService != null ? settingsService.getCompanyAddress() : "";
+        String companyPhone = settingsService != null ? settingsService.getCompanyPhone() : "";
+
+        sb.append(centerText(companyName != null ? companyName : "POS System", TEXT_RECEIPT_WIDTH)).append("\n");
+        if (companyAddress != null && !companyAddress.trim().isEmpty()) {
+            sb.append(centerText(companyAddress, TEXT_RECEIPT_WIDTH)).append("\n");
+        }
+        if (companyPhone != null && !companyPhone.trim().isEmpty()) {
+            sb.append(centerText(companyPhone, TEXT_RECEIPT_WIDTH)).append("\n");
+        }
+        sb.append("\n");
+
+        sb.append(centerText("CHARGE ACCOUNT PAYMENT", TEXT_RECEIPT_WIDTH)).append("\n");
+        sb.append("\n");
+
+        if (payment.getId() != null) {
+            sb.append("Receipt #: PAY-").append(payment.getId()).append("\n");
+        }
+        if (payment.getPaymentTimestamp() != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a");
+            sb.append("Date: ").append(payment.getPaymentTimestamp().format(formatter)).append("\n");
+        }
+        String customerName = customer != null ? customer.getFullName()
+                : (payment.getCustomer() != null ? payment.getCustomer().getFullName() : null);
+        if (customerName != null) {
+            sb.append("Customer: ").append(customerName).append("\n");
+        }
+        sb.append("\n");
+
+        sb.append(repeatChar('-', TEXT_RECEIPT_WIDTH)).append("\n");
+        sb.append(formatReceiptLine("", "", "Payment:", formatCurrency(payment.getAmount()), TEXT_RECEIPT_WIDTH)).append("\n");
+        sb.append(formatReceiptLine("", "", "Balance After:", formatCurrency(payment.getBalanceAfter()), TEXT_RECEIPT_WIDTH)).append("\n");
+        sb.append(repeatChar('-', TEXT_RECEIPT_WIDTH)).append("\n");
+        sb.append("\n");
+
+        if (payment.getNotes() != null && !payment.getNotes().trim().isEmpty()) {
+            sb.append("Notes: ").append(payment.getNotes()).append("\n");
+            sb.append("\n");
+        }
+
+        sb.append(centerText("Thank you!", TEXT_RECEIPT_WIDTH)).append("\n");
+        return sb.toString();
+    }
+
+    /**
+     * Generate a PDF receipt for a store charge account payment.
+     * @param payment The recorded payment
+     * @param customer The customer who made the payment
+     * @param filePath Target file path for the PDF
+     * @return true if the PDF was generated successfully
+     */
+    public boolean generateChargePaymentPdf(ChargeAccountPayment payment, Customer customer, String filePath) {
+        if (payment == null || filePath == null || filePath.trim().isEmpty()) {
+            LOGGER.warning("[PrinterService] Cannot generate payment PDF: payment or file path missing");
+            return false;
+        }
+        LOGGER.info("[PrinterService] Generating charge payment PDF to: " + filePath);
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+
+            float margin = 50;
+            float yStart = page.getMediaBox().getHeight() - margin;
+            float currentY = yStart;
+            float leading = 14.5f;
+
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
+                // Company info
+                setPdfFont(contentStream, PDType1Font.HELVETICA_BOLD, 12);
+                contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText(settingsService != null ? settingsService.getCompanyName() : "POS System"); contentStream.endText(); currentY -= leading;
+
+                setPdfFont(contentStream, PDType1Font.HELVETICA, 10);
+                String address = settingsService != null ? settingsService.getCompanyAddress() : "";
+                String phone = settingsService != null ? settingsService.getCompanyPhone() : "";
+                if (address != null && !address.isEmpty()) {
+                    contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText(address); contentStream.endText(); currentY -= leading;
+                }
+                if (phone != null && !phone.isEmpty()) {
+                    contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText(phone); contentStream.endText(); currentY -= leading;
+                }
+                currentY -= leading;
+
+                // Title
+                setPdfFont(contentStream, PDType1Font.HELVETICA_BOLD, 14);
+                contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("CHARGE ACCOUNT PAYMENT RECEIPT"); contentStream.endText(); currentY -= (leading * 2);
+
+                setPdfFont(contentStream, PDType1Font.HELVETICA, 11);
+                if (payment.getId() != null) {
+                    contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("Receipt #: PAY-" + payment.getId()); contentStream.endText(); currentY -= leading;
+                }
+                if (payment.getPaymentTimestamp() != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a");
+                    contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("Date: " + payment.getPaymentTimestamp().format(formatter)); contentStream.endText(); currentY -= leading;
+                }
+                String customerName = customer != null ? customer.getFullName()
+                        : (payment.getCustomer() != null ? payment.getCustomer().getFullName() : "");
+                if (customerName != null && !customerName.isEmpty()) {
+                    contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("Customer: " + customerName); contentStream.endText(); currentY -= leading;
+                }
+                currentY -= leading;
+
+                setPdfFont(contentStream, PDType1Font.HELVETICA_BOLD, 12);
+                contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("Payment Amount: " + formatCurrency(payment.getAmount())); contentStream.endText(); currentY -= leading;
+                contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("Balance After Payment: " + formatCurrency(payment.getBalanceAfter())); contentStream.endText(); currentY -= (leading * 2);
+
+                if (payment.getNotes() != null && !payment.getNotes().trim().isEmpty()) {
+                    setPdfFont(contentStream, PDType1Font.HELVETICA, 10);
+                    contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("Notes: " + payment.getNotes()); contentStream.endText(); currentY -= (leading * 2);
+                }
+
+                setPdfFont(contentStream, PDType1Font.HELVETICA, 10);
+                contentStream.beginText(); contentStream.newLineAtOffset(margin, currentY); contentStream.showText("Thank you!"); contentStream.endText();
+            }
+
+            document.save(filePath);
+            LOGGER.info("[PrinterService] Charge payment PDF saved successfully: " + filePath);
+            return true;
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "[PrinterService] Error generating charge payment PDF: " + filePath, e);
+            return false;
+        }
+    }
+
     /**
      * Send print job directly to network printer on port 9100 (RAW printing)
      * @param content Content to print

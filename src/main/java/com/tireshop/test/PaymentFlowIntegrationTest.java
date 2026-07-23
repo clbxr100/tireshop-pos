@@ -195,6 +195,18 @@ public class PaymentFlowIntegrationTest {
                         && payoffRows.get(0).getBalanceAfter().compareTo(balBefore6.subtract(payAmount)) == 0);
         check("6e: payoff has timestamp", payoffRows.size() == 1 && payoffRows.get(0).getPaymentTimestamp() != null);
 
+        // Detailed variant returns the persisted payment record (used for receipts)
+        Optional<ChargeAccountPayment> detailed = salesService.recordChargeAccountPaymentDetailed(customer.getId(), new BigDecimal("10.00"));
+        check("6f: detailed payoff returns record", detailed.isPresent());
+        check("6g: detailed record has amount, balanceAfter, timestamp",
+                detailed.isPresent()
+                        && detailed.get().getAmount().compareTo(new BigDecimal("10.00")) == 0
+                        && detailed.get().getBalanceAfter() != null
+                        && detailed.get().getPaymentTimestamp() != null
+                        && detailed.get().getId() != null);
+        // Balance reduced again by the extra $10 (scenario 7 expects this total)
+        // (restore expectation: scenario 7 overpay pays off whatever remains)
+
         // =========================================================
         System.out.println("\n--- Scenario 7: overpay payoff is capped at balance ---");
         BigDecimal balBefore7 = customerDao.findById(customer.getId()).get().getChargeBalance();
@@ -208,7 +220,7 @@ public class PaymentFlowIntegrationTest {
             if (cap.getAmount().compareTo(balBefore7) == 0) cappedRowFound = true;
         }
         check("7c: recorded amount equals previous balance, not the overpay",
-                rows7.size() == 2 && cappedRowFound);
+                rows7.size() == 3 && cappedRowFound);
 
         // =========================================================
         System.out.println("\n--- Scenario 8: payoff with zero balance rejected ---");
@@ -220,7 +232,7 @@ public class PaymentFlowIntegrationTest {
         System.out.println("\n--- Scenario 9: charge account activity combines charges + payments ---");
         SalesService.ChargeAccountActivity activity = salesService.getChargeAccountActivity(customer.getId());
         check("9a: charges listed (exp 2, got " + activity.charges.size() + ")", activity.charges.size() == 2);
-        check("9b: payments listed (exp 2, got " + activity.payments.size() + ")", activity.payments.size() == 2);
+        check("9b: payments listed (exp 3, got " + activity.payments.size() + ")", activity.payments.size() == 3);
         boolean allStoreCharge = true;
         for (SalePayment sp : activity.charges) {
             if (sp.getPaymentType() != PaymentType.STORE_CHARGE) allStoreCharge = false;
