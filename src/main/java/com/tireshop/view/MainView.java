@@ -1283,7 +1283,8 @@ public class MainView {
         chargePaymentBtn.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
 
         Button chargeHistoryBtn = new Button("📜 Charge History");
-        chargeHistoryBtn.setStyle("-fx-background-color: #6c757d; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
+        // Orange (not gray) so the button doesn't read as "grayed out"/disabled
+        chargeHistoryBtn.setStyle("-fx-background-color: #fd7e14; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
 
         controls.getChildren().addAll(addCustomerBtn, editCustomerBtn, deleteCustomerBtn, chargePaymentBtn, chargeHistoryBtn, searchCustomerField, searchCustomerBtn);
         headerSection.getChildren().addAll(headerTitle, controls);

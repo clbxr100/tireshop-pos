@@ -65,12 +65,14 @@ public class SalePaymentDao extends HibernateDao<SalePayment, Long> {
 
     /**
      * Find all store charge payment records for a customer (charges made against
-     * their charge account on paid sales), newest first
+     * their charge account on paid sales), newest first.
+     * The sale is JOIN FETCHed because callers (charge history dialog) read
+     * sale.invoiceNumber after the session has closed.
      */
     public List<SalePayment> findStoreChargesByCustomer(Long customerId) {
         try (Session session = sessionFactory.openSession()) {
             Query<SalePayment> query = session.createQuery(
-                    "FROM SalePayment sp WHERE sp.sale.customer.id = :customerId "
+                    "FROM SalePayment sp JOIN FETCH sp.sale WHERE sp.sale.customer.id = :customerId "
                     + "AND sp.paymentType = :type ORDER BY sp.paymentTimestamp DESC",
                     SalePayment.class);
             query.setParameter("customerId", customerId);

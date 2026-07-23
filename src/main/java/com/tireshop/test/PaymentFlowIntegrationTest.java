@@ -239,6 +239,19 @@ public class PaymentFlowIntegrationTest {
         }
         check("9c: all listed charges are STORE_CHARGE type", allStoreCharge);
 
+        // The charge history dialog dereferences sale.invoiceNumber after the DAO
+        // session has closed - the sale must be usable outside the session
+        boolean invoicesReadable = true;
+        for (SalePayment sp : activity.charges) {
+            try {
+                if (sp.getSale() == null || sp.getSale().getInvoiceNumber() == null) invoicesReadable = false;
+            } catch (Exception ex) {
+                System.out.println("   (9d debug: " + ex.getClass().getSimpleName() + ": " + ex.getMessage() + ")");
+                invoicesReadable = false;
+            }
+        }
+        check("9d: charge sale invoice numbers readable outside session", invoicesReadable);
+
         // =========================================================
         System.out.println("\n--- Scenario 10: invoice numbers increment ---");
         Sale sA = salesService.createSale(null, null);
