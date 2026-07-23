@@ -2784,10 +2784,41 @@ public class SalesController {
         
         HBox customerBox = new HBox(10);
         customerBox.getChildren().addAll(customerComboBox, addCustomerBtn);
-        
+
+        // Search box so you can filter customers instead of scrolling the whole list
+        TextField customerSearchField = new TextField();
+        customerSearchField.setPromptText("Type to search customers...");
+        customerSearchField.setPrefWidth(200);
+
+        VBox customerPickerBox = new VBox(5);
+        customerPickerBox.getChildren().addAll(customerSearchField, customerBox);
+
         // Load customers with their vehicles using the SalesService
-        List<Customer> customers = salesService.getAllCustomersWithVehicles();
-        customerComboBox.setItems(FXCollections.observableArrayList(customers));
+        final List<Customer> customers = new ArrayList<>(salesService.getAllCustomersWithVehicles());
+        ObservableList<Customer> filteredCustomers = FXCollections.observableArrayList(customers);
+        customerComboBox.setItems(filteredCustomers);
+
+        // Filter the dropdown as you type (matches name or phone)
+        customerSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            String searchTerm = newVal.toLowerCase().trim();
+            if (searchTerm.isEmpty()) {
+                filteredCustomers.setAll(customers);
+                customerComboBox.hide();
+            } else {
+                List<Customer> filtered = customers.stream()
+                    .filter(c -> {
+                        String fullName = (c.getFirstName() + " " + c.getLastName()).toLowerCase();
+                        String phone = c.getPhone() != null ? c.getPhone().toLowerCase() : "";
+                        return fullName.contains(searchTerm) || phone.contains(searchTerm);
+                    })
+                    .collect(Collectors.toList());
+                filteredCustomers.setAll(filtered);
+                if (!filtered.isEmpty()) {
+                    customerComboBox.show();
+                    customerComboBox.getSelectionModel().selectFirst();
+                }
+            }
+        });
         
         // Vehicle selection
         Label vehicleLabel = new Label("Vehicle:");
@@ -2848,6 +2879,7 @@ public class SalesController {
         
         // Add Customer button action
         addCustomerBtn.setOnAction(e -> {
+            customerSearchField.clear();
             showAddCustomerDialog(owner, customers, customerComboBox);
         });
         
@@ -2873,7 +2905,7 @@ public class SalesController {
         });
         
         grid.add(customerLabel, 0, 0);
-        grid.add(customerBox, 1, 0);
+        grid.add(customerPickerBox, 1, 0);
         grid.add(vehicleLabel, 0, 1);
         grid.add(vehicleBox, 1, 1);
         
@@ -3277,11 +3309,12 @@ public class SalesController {
                     Thread.currentThread().interrupt();
                 }
                 
-                // Refresh the customer list
+                // Refresh the customer list (update items in place so any
+                // search-filter list on the combo stays wired up)
                 List<Customer> updatedCustomers = salesService.getAllCustomersWithVehicles();
                 customers.clear();
                 customers.addAll(updatedCustomers);
-                customerComboBox.setItems(FXCollections.observableArrayList(customers));
+                customerComboBox.getItems().setAll(customers);
                 
                 // Select the most recently added customer (last in the list)
                 if (!updatedCustomers.isEmpty()) {
