@@ -208,11 +208,23 @@ public class ServiceController {
     }
 
     public void refreshServicesTable() {
-        System.out.println("[ServiceController] Refreshing services table...");
         try {
+            // Remember current selection so auto-refresh doesn't lose it
+            Service selected = servicesTable != null ? servicesTable.getSelectionModel().getSelectedItem() : null;
+            Long selectedId = selected != null ? selected.getId() : null;
+
             List<Service> currentServices = serviceDao.findAll();
             servicesList.setAll(currentServices);
-            System.out.println("[ServiceController] Found " + currentServices.size() + " services.");
+
+            // Restore selection if the service still exists
+            if (selectedId != null) {
+                for (Service s : servicesList) {
+                    if (s.getId() != null && s.getId().equals(selectedId)) {
+                        servicesTable.getSelectionModel().select(s);
+                        break;
+                    }
+                }
+            }
         } catch (Exception e) {
             System.err.println("[ServiceController] Error refreshing services table: " + e.getMessage());
             e.printStackTrace();
@@ -257,6 +269,9 @@ public class ServiceController {
                 refreshServicesTable();
                 showAlert(Alert.AlertType.INFORMATION, "Service Updated", "Service updated successfully.");
             } catch (Exception e) {
+                // editedService is the same instance shown in the table and was already
+                // mutated by the dialog - refresh from the DB to restore the real values
+                refreshServicesTable();
                 System.err.println("[ServiceController] Error updating service: " + e.getMessage());
                 e.printStackTrace();
                 showAlert(Alert.AlertType.ERROR, "Update Error", "Could not update the service.");

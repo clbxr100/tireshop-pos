@@ -39,6 +39,8 @@
         <mapping class="com.tireshop.model.User"/>
         <mapping class="com.tireshop.model.TimeEntry"/>
         <mapping class="com.tireshop.model.ServiceRecord"/>
+        <mapping class="com.tireshop.model.SalePayment"/>
+        <mapping class="com.tireshop.model.ChargeAccountPayment"/>
         <mapping class="com.tireshop.model.TireData"/>
     </session-factory>
 </hibernate-configuration> 

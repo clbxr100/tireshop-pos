@@ -33,6 +33,7 @@ public class SalesService {
     private final GenericDao<Vehicle, Long> vehicleDao;
     private final GenericDao<Service, Long> serviceDao;
     private final GenericDao<Technician, Long> technicianDao;
+    private final GenericDao<ChargeAccountPayment, Long> chargeAccountPaymentDao;
     private final InventoryService inventoryService;
     private final SettingsService settingsService;
     private final VehicleServiceHistoryService vehicleServiceHistoryService;
@@ -45,6 +46,7 @@ public class SalesService {
             GenericDao<Vehicle, Long> vehicleDao,
             GenericDao<Service, Long> serviceDao,
             GenericDao<Technician, Long> technicianDao,
+            GenericDao<ChargeAccountPayment, Long> chargeAccountPaymentDao,
             InventoryService inventoryService,
             SettingsService settingsService,
             VehicleServiceHistoryService vehicleServiceHistoryService) {
@@ -55,6 +57,7 @@ public class SalesService {
         this.vehicleDao = vehicleDao;
         this.serviceDao = serviceDao;
         this.technicianDao = technicianDao;
+        this.chargeAccountPaymentDao = chargeAccountPaymentDao;
         this.inventoryService = inventoryService;
         this.settingsService = settingsService;
         this.vehicleServiceHistoryService = vehicleServiceHistoryService;
@@ -237,9 +240,7 @@ public class SalesService {
             recordSinglePayment(completedSale);
 
             // Create service record if vehicle is associated
-            if (vehicleServiceHistoryService != null && completedSale.getVehicle() != null) {
-                vehicleServiceHistoryService.createServiceRecordFromSale(completedSale);
-            }
+            createServiceRecordSafely(completedSale);
 
             return Optional.of(completedSale);
         }
@@ -267,13 +268,23 @@ public class SalesService {
 
         // Validate: every part must be a positive amount
         BigDecimal totalPaid = BigDecimal.ZERO;
+        BigDecimal storeChargeTotal = BigDecimal.ZERO;
         for (SalePayment payment : payments) {
             if (payment.getPaymentType() == null || payment.getAmount() == null
                     || payment.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
                 System.out.println("[SalesService] Invalid split payment part rejected");
                 return Optional.empty();
             }
+            if (payment.getPaymentType() == PaymentType.STORE_CHARGE) {
+                storeChargeTotal = storeChargeTotal.add(payment.getAmount());
+            }
             totalPaid = totalPaid.add(payment.getAmount());
+        }
+
+        // Store charge parts need a customer account to charge against
+        if (storeChargeTotal.compareTo(BigDecimal.ZERO) > 0 && sale.getCustomer() == null) {
+            System.out.println("[SalesService] Split with store charge requires a customer on the sale");
+            return Optional.empty();
         }
 
         // Parts must cover the sale total
@@ -305,6 +316,15 @@ public class SalesService {
             salePaymentDao.save(payment);
         }
 
+        // Store charge parts go on the customer's charge account balance
+        if (storeChargeTotal.compareTo(BigDecimal.ZERO) > 0) {
+            Customer customer = completedSale.getCustomer();
+            customer.setChargeBalance(customer.getChargeBalance().add(storeChargeTotal));
+            customerDao.update(customer);
+            System.out.println("[SalesService] Split: charged $" + storeChargeTotal + " to "
+                    + customer.getFullName() + "'s account (new balance: $" + customer.getChargeBalance() + ")");
+        }
+
         // Keep the human-readable split block in notes - the receipt printer reads it
         StringBuilder paymentNotes = new StringBuilder("SPLIT PAYMENT:\n");
         for (SalePayment payment : payments) {
@@ -320,11 +340,27 @@ public class SalesService {
         completedSale = saleDao.update(completedSale);
 
         // Create service record if vehicle is associated
-        if (vehicleServiceHistoryService != null && completedSale.getVehicle() != null) {
-            vehicleServiceHistoryService.createServiceRecordFromSale(completedSale);
-        }
+        createServiceRecordSafely(completedSale);
 
         return Optional.of(completedSale);
+    }
+
+    /**
+     * Create a service history record for a completed sale without ever letting a
+     * failure here break payment completion. Re-fetches the sale so its item graph
+     * is fully initialized outside of a Hibernate session.
+     */
+    private void createServiceRecordSafely(Sale completedSale) {
+        try {
+            if (vehicleServiceHistoryService == null || completedSale.getVehicle() == null) {
+                return;
+            }
+            Optional<Sale> fresh = saleDao.findById(completedSale.getId());
+            vehicleServiceHistoryService.createServiceRecordFromSale(fresh.orElse(completedSale));
+        } catch (Exception e) {
+            System.err.println("[SalesService] Could not create service record for sale "
+                    + completedSale.getId() + ": " + e.getMessage());
+        }
     }
 
     /**
@@ -450,9 +486,7 @@ public class SalesService {
         recordSinglePayment(completedSale);
 
         // Create service record if vehicle is associated
-        if (vehicleServiceHistoryService != null && completedSale.getVehicle() != null) {
-            vehicleServiceHistoryService.createServiceRecordFromSale(completedSale);
-        }
+        createServiceRecordSafely(completedSale);
 
         return Optional.of(completedSale);
     }
@@ -485,9 +519,43 @@ public class SalesService {
         customer.setChargeBalance(balance.subtract(applied));
         customerDao.update(customer);
 
+        // Keep an auditable record of the payoff
+        ChargeAccountPayment accountPayment = new ChargeAccountPayment(customer, applied);
+        accountPayment.setBalanceAfter(customer.getChargeBalance());
+        chargeAccountPaymentDao.save(accountPayment);
+
         System.out.println("[SalesService] Charge account payment: $" + applied + " from "
                 + customer.getFullName() + " (remaining balance: $" + customer.getChargeBalance() + ")");
         return Optional.of(customer.getChargeBalance());
+    }
+
+    /**
+     * Combined store charge account activity for a customer:
+     * charges made against the account and payoff payments made towards it.
+     */
+    public static class ChargeAccountActivity {
+        public final List<SalePayment> charges;
+        public final List<ChargeAccountPayment> payments;
+
+        public ChargeAccountActivity(List<SalePayment> charges, List<ChargeAccountPayment> payments) {
+            this.charges = charges;
+            this.payments = payments;
+        }
+    }
+
+    /**
+     * Get the full store charge account history for a customer.
+     */
+    public ChargeAccountActivity getChargeAccountActivity(Long customerId) {
+        List<SalePayment> charges = new ArrayList<>();
+        List<ChargeAccountPayment> payments = new ArrayList<>();
+        if (salePaymentDao instanceof com.tireshop.dao.SalePaymentDao) {
+            charges = ((com.tireshop.dao.SalePaymentDao) salePaymentDao).findStoreChargesByCustomer(customerId);
+        }
+        if (chargeAccountPaymentDao instanceof com.tireshop.dao.ChargeAccountPaymentDao) {
+            payments = ((com.tireshop.dao.ChargeAccountPaymentDao) chargeAccountPaymentDao).findByCustomerId(customerId);
+        }
+        return new ChargeAccountActivity(charges, payments);
     }
 
     /**
@@ -518,9 +586,7 @@ public class SalesService {
             recordSinglePayment(completedSale);
 
             // Create service record if vehicle is associated
-            if (vehicleServiceHistoryService != null && completedSale.getVehicle() != null) {
-                vehicleServiceHistoryService.createServiceRecordFromSale(completedSale);
-            }
+            createServiceRecordSafely(completedSale);
 
             return Optional.of(completedSale);
         }
@@ -551,9 +617,7 @@ public class SalesService {
             recordSinglePayment(completedSale);
 
             // Create service record if vehicle is associated
-            if (vehicleServiceHistoryService != null && completedSale.getVehicle() != null) {
-                vehicleServiceHistoryService.createServiceRecordFromSale(completedSale);
-            }
+            createServiceRecordSafely(completedSale);
 
             return Optional.of(completedSale);
         }
@@ -582,9 +646,7 @@ public class SalesService {
             recordSinglePayment(completedSale);
 
             // Create service record if vehicle is associated
-            if (vehicleServiceHistoryService != null && completedSale.getVehicle() != null) {
-                vehicleServiceHistoryService.createServiceRecordFromSale(completedSale);
-            }
+            createServiceRecordSafely(completedSale);
 
             return Optional.of(completedSale);
         }
@@ -762,12 +824,17 @@ public class SalesService {
                 
                 System.out.println("[SalesService] ⚠️ VOIDING SALE " + sale.getInvoiceNumber() + " - Reason: " + reason);
                 
-                // Restore inventory for all product items
+                // Restore inventory for all product items. Only restore units that are
+                // still "out" - units already returned via a partial return were put
+                // back in stock then, and must not be restored twice.
                 for (SaleItem item : sale.getItems()) {
                     if ("PRODUCT".equals(item.getItemType()) && item.getProduct() != null) {
-                        inventoryService.addInventory(item.getProduct().getId(), item.getQuantity());
-                        System.out.println("[SalesService] ✓ Restored " + item.getQuantity() + " × " + 
-                                         item.getProduct().getName() + " to inventory");
+                        int remainingOut = item.getQuantity() - item.getQuantityReturned();
+                        if (remainingOut > 0) {
+                            inventoryService.addInventory(item.getProduct().getId(), remainingOut);
+                            System.out.println("[SalesService] ✓ Restored " + remainingOut + " × " +
+                                             item.getProduct().getName() + " to inventory");
+                        }
                     }
                 }
                 
@@ -775,10 +842,15 @@ public class SalesService {
                 sale.setVoided(true);
                 sale.setVoidReason(reason != null ? reason : "Customer Return");
                 sale.setVoidTimestamp(LocalDateTime.now());
-                
+
                 Sale voidedSale = saleDao.update(sale);
+
+                // Reverse any store charge so the customer's account isn't left
+                // holding a balance for merchandise they returned
+                reverseStoreChargeIfNeeded(voidedSale);
+
                 System.out.println("[SalesService] ✅ Sale " + sale.getInvoiceNumber() + " voided successfully - inventory restored");
-                
+
                 return Optional.of(voidedSale);
             }
             
@@ -790,6 +862,47 @@ public class SalesService {
         }
     }
     
+    /**
+     * If a voided sale had store charge payments, subtract them from the customer's
+     * charge account balance and record an auditable reversal entry.
+     * Never lets a failure here break the void itself.
+     */
+    private void reverseStoreChargeIfNeeded(Sale voidedSale) {
+        try {
+            if (!(salePaymentDao instanceof com.tireshop.dao.SalePaymentDao)) {
+                return;
+            }
+            List<SalePayment> payments = ((com.tireshop.dao.SalePaymentDao) salePaymentDao)
+                    .findBySaleId(voidedSale.getId());
+            BigDecimal chargedAmount = BigDecimal.ZERO;
+            for (SalePayment payment : payments) {
+                if (payment.getPaymentType() == PaymentType.STORE_CHARGE && payment.getAmount() != null) {
+                    chargedAmount = chargedAmount.add(payment.getAmount());
+                }
+            }
+            if (chargedAmount.compareTo(BigDecimal.ZERO) <= 0 || voidedSale.getCustomer() == null) {
+                return;
+            }
+
+            Customer customer = voidedSale.getCustomer();
+            // Balance may go negative = shop owes the customer (they already paid down the charge)
+            BigDecimal newBalance = customer.getChargeBalance().subtract(chargedAmount);
+            customer.setChargeBalance(newBalance);
+            customerDao.update(customer);
+
+            ChargeAccountPayment reversal = new ChargeAccountPayment(customer, chargedAmount.negate());
+            reversal.setBalanceAfter(newBalance);
+            reversal.setNotes("Charge reversed - voided sale " + voidedSale.getInvoiceNumber());
+            chargeAccountPaymentDao.save(reversal);
+
+            System.out.println("[SalesService] Void: reversed $" + chargedAmount + " store charge on "
+                    + customer.getFullName() + "'s account (new balance: $" + newBalance + ")");
+        } catch (Exception e) {
+            System.err.println("[SalesService] Could not reverse store charge for voided sale "
+                    + voidedSale.getId() + ": " + e.getMessage());
+        }
+    }
+
     /**
      * Update sale item price (only for pending sales)
      * @param saleId Sale ID
@@ -1209,19 +1322,47 @@ public class SalesService {
                 }
                 
                 System.out.println("[SalesService] Processing partial return for " + sale.getInvoiceNumber());
-                
-                // Process each returned item
+
+                // Capture pre-return total so we can adjust the charge account afterwards
+                BigDecimal totalBeforeReturn = sale.getTotal() != null ? sale.getTotal() : BigDecimal.ZERO;
+
+                // Process each returned item. Match by ID against THIS sale's own items -
+                // the caller's item objects may come from a different (detached) sale instance,
+                // and modifying those would silently lose the return.
                 for (com.tireshop.controller.SalesController.ReturnItem returnItem : returnItems) {
-                    SaleItem saleItem = returnItem.item;
-                    int returnQty = returnItem.quantity;
-                    
+                    if (returnItem.item == null || returnItem.item.getId() == null || returnItem.quantity <= 0) {
+                        continue;
+                    }
+                    SaleItem saleItem = null;
+                    for (SaleItem si : sale.getItems()) {
+                        if (returnItem.item.getId().equals(si.getId())) {
+                            saleItem = si;
+                            break;
+                        }
+                    }
+                    if (saleItem == null) {
+                        System.err.println("[SalesService] Return item " + returnItem.item.getId()
+                                + " does not belong to sale " + sale.getInvoiceNumber() + " - skipped");
+                        continue;
+                    }
+
+                    // Clamp: can't return more units than are still outstanding on this line
+                    // (a previous partial return may have already returned some)
+                    int stillOut = saleItem.getQuantity() - saleItem.getQuantityReturned();
+                    int returnQty = Math.min(returnItem.quantity, stillOut);
+                    if (returnQty <= 0) {
+                        System.err.println("[SalesService] All units of " + saleItem.getItemName()
+                                + " were already returned - skipped");
+                        continue;
+                    }
+
                     // Update quantity returned
                     saleItem.setQuantityReturned(saleItem.getQuantityReturned() + returnQty);
-                    
+
                     // Restore inventory for products
                     if ("PRODUCT".equals(saleItem.getItemType()) && saleItem.getProduct() != null) {
                         inventoryService.addInventory(saleItem.getProduct().getId(), returnQty);
-                        System.out.println("[SalesService] Restored " + returnQty + " of " + 
+                        System.out.println("[SalesService] Restored " + returnQty + " of " +
                                          saleItem.getProduct().getName() + " to inventory");
                     }
                 }
@@ -1248,18 +1389,31 @@ public class SalesService {
                     }
                 }
                 
+                // Re-apply the sale-level discount (e.g. military) the same way
+                // Sale.recalculateAmounts does - capped at the new subtotal, and
+                // reducing the taxable base (floor at zero)
+                BigDecimal discount = sale.getDiscountAmount() != null ? sale.getDiscountAmount() : BigDecimal.ZERO;
+                if (discount.compareTo(newSubtotal) > 0) {
+                    discount = newSubtotal;
+                }
+                BigDecimal discountedSubtotal = newSubtotal.subtract(discount);
+                BigDecimal discountedTaxable = taxableSubtotal.subtract(discount);
+                if (discountedTaxable.compareTo(BigDecimal.ZERO) < 0) {
+                    discountedTaxable = BigDecimal.ZERO;
+                }
+
                 // Check if customer is tax exempt
                 boolean isTaxExempt = (sale.getCustomer() != null && sale.getCustomer().isTaxExempt());
-                
+
                 // Calculate new tax
                 BigDecimal newTax = BigDecimal.ZERO;
-                if (!isTaxExempt && taxableSubtotal.compareTo(BigDecimal.ZERO) > 0) {
+                if (!isTaxExempt && discountedTaxable.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal taxRate = settingsService.getSalesTaxRate();
-                    newTax = taxableSubtotal.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
+                    newTax = discountedTaxable.multiply(taxRate).setScale(2, RoundingMode.HALF_UP);
                 }
-                
+
                 // Calculate new total
-                BigDecimal newTotal = newSubtotal.add(newTax);
+                BigDecimal newTotal = discountedSubtotal.add(newTax);
                 
                 // Update sale amounts
                 sale.setSubtotal(newSubtotal);
@@ -1273,8 +1427,13 @@ public class SalesService {
                 
                 // Save updates
                 Sale updatedSale = saleDao.update(sale);
+
+                // If any of this sale was charged to the customer's account, the return
+                // must reduce what they owe (cash/card parts are refunded physically)
+                adjustStoreChargeForPartialReturn(updatedSale, totalBeforeReturn.subtract(newTotal));
+
                 System.out.println("[SalesService] Partial return processed successfully");
-                
+
                 return Optional.of(updatedSale);
             }
             
@@ -1286,6 +1445,66 @@ public class SalesService {
         }
     }
     
+    /**
+     * After a partial return, reduce the customer's store charge balance by the
+     * returned amount (up to what was actually charged on this sale) and record
+     * an auditable adjustment. The store charge payment rows are shrunk to match
+     * so payment-method reports stay accurate. Never breaks the return itself.
+     */
+    private void adjustStoreChargeForPartialReturn(Sale sale, BigDecimal reduction) {
+        try {
+            if (reduction == null || reduction.compareTo(BigDecimal.ZERO) <= 0
+                    || sale.getCustomer() == null
+                    || !(salePaymentDao instanceof com.tireshop.dao.SalePaymentDao)) {
+                return;
+            }
+
+            List<SalePayment> payments = ((com.tireshop.dao.SalePaymentDao) salePaymentDao)
+                    .findBySaleId(sale.getId());
+            BigDecimal chargedAmount = BigDecimal.ZERO;
+            for (SalePayment payment : payments) {
+                if (payment.getPaymentType() == PaymentType.STORE_CHARGE && payment.getAmount() != null) {
+                    chargedAmount = chargedAmount.add(payment.getAmount());
+                }
+            }
+            if (chargedAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                return; // Nothing was charged to the account on this sale
+            }
+
+            BigDecimal applied = reduction.min(chargedAmount);
+            Customer customer = sale.getCustomer();
+            // Balance may go negative = shop owes the customer (they already paid down the charge)
+            BigDecimal newBalance = customer.getChargeBalance().subtract(applied);
+            customer.setChargeBalance(newBalance);
+            customerDao.update(customer);
+
+            // Shrink the store charge payment rows so reports don't overstate charges
+            BigDecimal remaining = applied;
+            for (SalePayment payment : payments) {
+                if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+                    break;
+                }
+                if (payment.getPaymentType() == PaymentType.STORE_CHARGE && payment.getAmount() != null) {
+                    BigDecimal cut = payment.getAmount().min(remaining);
+                    payment.setAmount(payment.getAmount().subtract(cut));
+                    salePaymentDao.update(payment);
+                    remaining = remaining.subtract(cut);
+                }
+            }
+
+            ChargeAccountPayment adjustment = new ChargeAccountPayment(customer, applied.negate());
+            adjustment.setBalanceAfter(newBalance);
+            adjustment.setNotes("Partial return - sale " + sale.getInvoiceNumber());
+            chargeAccountPaymentDao.save(adjustment);
+
+            System.out.println("[SalesService] Partial return: reduced store charge by $" + applied + " on "
+                    + customer.getFullName() + "'s account (new balance: $" + newBalance + ")");
+        } catch (Exception e) {
+            System.err.println("[SalesService] Could not adjust store charge for partial return on sale "
+                    + sale.getId() + ": " + e.getMessage());
+        }
+    }
+
     // Helper methods
     private synchronized String generateInvoiceNumber() {
         // Format: INV-001, INV-002, etc. (sequential)

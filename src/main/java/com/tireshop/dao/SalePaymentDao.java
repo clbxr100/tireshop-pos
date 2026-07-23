@@ -40,8 +40,9 @@ public class SalePaymentDao extends HibernateDao<SalePayment, Long> {
     }
 
     /**
-     * Find all payment records for paid sales within a date range (inclusive).
-     * Used for payment-type breakdowns in reports.
+     * Find all payment records for paid, non-voided sales within a date range
+     * (inclusive). Used for payment-type breakdowns in reports - voided sales
+     * are excluded so refunds don't inflate the totals.
      */
     public List<SalePayment> findByDateRange(LocalDate fromDate, LocalDate toDate) {
         try (Session session = sessionFactory.openSession()) {
@@ -50,10 +51,30 @@ public class SalePaymentDao extends HibernateDao<SalePayment, Long> {
 
             Query<SalePayment> query = session.createQuery(
                     "FROM SalePayment sp WHERE sp.sale.timestamp >= :startOfDay "
-                    + "AND sp.sale.timestamp <= :endOfDay AND sp.sale.isPaid = true",
+                    + "AND sp.sale.timestamp <= :endOfDay AND sp.sale.isPaid = true "
+                    + "AND sp.sale.isVoided = false",
                     SalePayment.class);
             query.setParameter("startOfDay", startOfDay);
             query.setParameter("endOfDay", endOfDay);
+            return query.list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Find all store charge payment records for a customer (charges made against
+     * their charge account on paid sales), newest first
+     */
+    public List<SalePayment> findStoreChargesByCustomer(Long customerId) {
+        try (Session session = sessionFactory.openSession()) {
+            Query<SalePayment> query = session.createQuery(
+                    "FROM SalePayment sp WHERE sp.sale.customer.id = :customerId "
+                    + "AND sp.paymentType = :type ORDER BY sp.paymentTimestamp DESC",
+                    SalePayment.class);
+            query.setParameter("customerId", customerId);
+            query.setParameter("type", com.tireshop.model.PaymentType.STORE_CHARGE);
             return query.list();
         } catch (Exception e) {
             e.printStackTrace();

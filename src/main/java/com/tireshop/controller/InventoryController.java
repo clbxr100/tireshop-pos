@@ -660,9 +660,15 @@ public class InventoryController {
      * Apply current sorting settings
      */
     private void applySorting() {
+        if (sortByComboBox == null || productList == null || productTable == null) {
+            return;
+        }
         String sortBy = sortByComboBox.getValue();
+        if (sortBy == null) {
+            return;
+        }
         boolean ascending = ascendingCheckBox.isSelected();
-        
+
         List<Product> products = new ArrayList<>(productList);
         
         switch (sortBy) {
@@ -811,13 +817,16 @@ public class InventoryController {
      */
     private void applyFilters() {
         String filterValue = filterByComboBox.getValue();
-        if (filterValue.equals("All")) {
+        if (filterValue == null || filterValue.equals("All")) {
             refreshProducts();
         } else {
             Map<String, Object> filters = new HashMap<>();
             filters.put("type", filterValue);
             List<Product> filteredProducts = tireService.filterTires(filters);
-            productTable.setItems(FXCollections.observableArrayList(filteredProducts));
+            // Update productList too, not just the table - otherwise sorting operates
+            // on the stale unfiltered list and the next refresh fights the filter
+            productList = FXCollections.observableArrayList(filteredProducts);
+            productTable.setItems(productList);
         }
     }
     
@@ -1096,16 +1105,41 @@ public class InventoryController {
      * PRESERVES active search filter to prevent auto-refresh from clearing searches
      */
     public void refreshProducts() {
+        // Remember current selection so auto-refresh doesn't lose it
+        Product selected = productTable != null ? productTable.getSelectionModel().getSelectedItem() : null;
+        Long selectedId = selected != null ? selected.getId() : null;
+
         // Check if there's an active search filter
         if (searchField != null && searchField.getText() != null && !searchField.getText().trim().isEmpty()) {
             // Re-apply the search instead of showing all products
             String currentSearch = searchField.getText();
-            System.out.println("[InventoryController] Refresh with active search: " + currentSearch);
             searchProducts(currentSearch);
         } else {
             // No search active, show all products
             productList = FXCollections.observableArrayList(inventoryService.getAllProducts());
             productTable.setItems(productList);
+        }
+
+        // Re-apply the tire-type filter so auto-refresh doesn't silently drop it
+        String filterValue = filterByComboBox != null ? filterByComboBox.getValue() : null;
+        if (filterValue != null && !"All".equals(filterValue)) {
+            Map<String, Object> filters = new HashMap<>();
+            filters.put("type", filterValue);
+            productList = FXCollections.observableArrayList(tireService.filterTires(filters));
+            productTable.setItems(productList);
+        }
+
+        // Re-apply the chosen sort order so auto-refresh doesn't reset it
+        applySorting();
+
+        // Restore selection if the product is still in the list
+        if (selectedId != null && productTable != null) {
+            for (Product p : productTable.getItems()) {
+                if (p.getId() != null && p.getId().equals(selectedId)) {
+                    productTable.getSelectionModel().select(p);
+                    break;
+                }
+            }
         }
     }
     
@@ -2148,28 +2182,34 @@ public class InventoryController {
         grid.setPadding(new Insets(20));
         
         // Product info
+        // Supplier price can be null in the catalog - fall back to zero instead of NPEing
+        BigDecimal unitPrice = inventory.getPrice() != null ? inventory.getPrice() : BigDecimal.ZERO;
+
         grid.add(new Label("Product:"), 0, 0);
         grid.add(new Label(product.getName()), 1, 0);
-        
+
         grid.add(new Label("Unit Price:"), 0, 1);
-        grid.add(new Label(String.format("$%.2f", inventory.getPrice())), 1, 1);
-        
+        grid.add(new Label(String.format("$%.2f", unitPrice)), 1, 1);
+
         grid.add(new Label("Available:"), 0, 2);
         grid.add(new Label(String.valueOf(inventory.getQuantityAvailable())), 1, 2);
-        
+
         // Order quantity
         grid.add(new Label("Order Quantity:"), 0, 3);
-        Spinner<Integer> quantitySpinner = new Spinner<>(1, inventory.getQuantityAvailable(), 1);
+        Spinner<Integer> quantitySpinner = new Spinner<>(1, Math.max(1, inventory.getQuantityAvailable()), 1);
         quantitySpinner.setEditable(true);
         grid.add(quantitySpinner, 1, 3);
-        
+
         // Total
-        Label totalLabel = new Label(String.format("$%.2f", inventory.getPrice()));
+        Label totalLabel = new Label(String.format("$%.2f", unitPrice));
         grid.add(new Label("Total:"), 0, 4);
         grid.add(totalLabel, 1, 4);
-        
+
         quantitySpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
-            BigDecimal total = inventory.getPrice().multiply(BigDecimal.valueOf(newVal));
+            if (newVal == null) {
+                return; // Editable spinner cleared - keep previous total
+            }
+            BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(newVal));
             totalLabel.setText(String.format("$%.2f", total));
         });
         
@@ -2187,11 +2227,17 @@ public class InventoryController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == orderButtonType) {
                 try {
+                    Integer quantity = quantitySpinner.getValue();
+                    if (quantity == null || quantity < 1) {
+                        showAlert(Alert.AlertType.WARNING, "Invalid Quantity",
+                                  "Please enter a valid order quantity.");
+                        return null;
+                    }
                     List<com.tireshop.service.SupplierCatalogService.OrderItem> items = Arrays.asList(
                         new com.tireshop.service.SupplierCatalogService.OrderItem(
-                            inventory.getSku(), 
-                            quantitySpinner.getValue(), 
-                            inventory.getPrice()
+                            inventory.getSku(),
+                            quantity,
+                            unitPrice
                         )
                     );
                     

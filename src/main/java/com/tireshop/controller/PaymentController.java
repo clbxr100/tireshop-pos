@@ -84,12 +84,11 @@ public class PaymentController {
         ButtonType checkBtn = new ButtonType("Check");
         ButtonType giftCardBtn = new ButtonType("Gift Card");
         ButtonType financingBtn = new ButtonType("Financing");
-        ButtonType storeCreditBtn = new ButtonType("Store Credit");
         ButtonType storeChargeBtn = new ButtonType("Store Charge");
         ButtonType splitPaymentBtn = new ButtonType("Split Payment");
 
         dialog.getDialogPane().getButtonTypes().setAll(cashBtn, creditCardBtn, debitCardBtn, checkBtn,
-                                     giftCardBtn, financingBtn, storeCreditBtn, storeChargeBtn, splitPaymentBtn, ButtonType.CANCEL);
+                                     giftCardBtn, financingBtn, storeChargeBtn, splitPaymentBtn, ButtonType.CANCEL);
         
         System.out.println("Payment dialog created with total display");
         
@@ -107,8 +106,6 @@ public class PaymentController {
                 return processGiftCardPayment(sale, owner);
             } else if (dialogButton == financingBtn) {
                 return processFinancingPayment(sale, owner);
-            } else if (dialogButton == storeCreditBtn) {
-                return processStoreCreditPayment(sale, owner);
             } else if (dialogButton == storeChargeBtn) {
                 return processStoreChargePayment(sale, owner);
             } else if (dialogButton == splitPaymentBtn) {
@@ -482,13 +479,6 @@ public class PaymentController {
         return false;
     }
 
-    private boolean processStoreCreditPayment(Sale sale, Stage owner) {
-        // Here you would check if the customer has enough store credit
-        // For now, we'll just approve it
-        Optional<Sale> completedSale = salesService.completeSale(sale.getId(), PaymentType.STORE_CREDIT);
-        return completedSale.isPresent();
-    }
-
     private boolean processSplitPayment(Sale sale, Stage owner) {
         // Create split payment dialog
         Dialog<Boolean> dialog = new Dialog<>();
@@ -539,6 +529,10 @@ public class PaymentController {
         ComboBox<PaymentType> paymentTypeCombo = new ComboBox<>();
         paymentTypeCombo.getItems().addAll(PaymentType.CASH, PaymentType.CREDIT_CARD,
             PaymentType.DEBIT_CARD, PaymentType.CHECK, PaymentType.GIFT_CARD);
+        // Partial store charge: pay part now, rest goes on the customer's account
+        if (sale.getCustomer() != null) {
+            paymentTypeCombo.getItems().add(PaymentType.STORE_CHARGE);
+        }
         paymentTypeCombo.setPromptText("Payment Type");
 
         TextField amountField = new TextField();
@@ -688,7 +682,12 @@ public class PaymentController {
                     StringBuilder summary = new StringBuilder("Split Payment Completed!\n\n");
                     for (com.tireshop.model.SalePayment p : salePayments) {
                         summary.append(p.getPaymentType().getDisplayName()).append(": $")
-                               .append(formatCurrency(p.getAmount())).append("\n");
+                               .append(formatCurrency(p.getAmount()));
+                        if (p.getPaymentType() == PaymentType.STORE_CHARGE) {
+                            summary.append(" (added to ").append(sale.getCustomer().getFullName())
+                                   .append("'s account)");
+                        }
+                        summary.append("\n");
                     }
                     if (change.compareTo(BigDecimal.ZERO) > 0) {
                         summary.append("\nChange Due: $").append(formatCurrency(change));

@@ -424,9 +424,11 @@ public class ReportController {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
                     
                 int lowStockCount = inventoryService.getLowStockProducts().size();
-                
-                double avgSaleValue = validMonthSales.isEmpty() ? 0.0 : 
-                    monthRevenue.divide(BigDecimal.valueOf(validMonthSales.size()), 2, BigDecimal.ROUND_HALF_UP).doubleValue();
+
+                // Average over PAID sales only - the revenue numerator excludes unpaid ones too
+                long paidMonthCount = validMonthSales.stream().filter(Sale::isPaid).count();
+                double avgSaleValue = paidMonthCount == 0 ? 0.0 :
+                    monthRevenue.divide(BigDecimal.valueOf(paidMonthCount), 2, BigDecimal.ROUND_HALF_UP).doubleValue();
                 
                 // Update UI on JavaFX thread
                 javafx.application.Platform.runLater(() -> {
@@ -694,10 +696,11 @@ public class ReportController {
 
     private void updateParameterVisibility() {
         String selectedReport = reportTypeComboBox.getValue();
-        boolean dateRangeVisible = "Sales Report by Date Range".equals(selectedReport) || 
+        boolean dateRangeVisible = "Sales Report by Date Range".equals(selectedReport) ||
                                    "Product Sales Report".equals(selectedReport) ||
                                    "Customer Purchase History".equals(selectedReport) ||
                                    "Technician Performance".equals(selectedReport) ||
+                                   "Voided/Returned Sales Report".equals(selectedReport) ||
                                    "Daily Financial Summary".equals(selectedReport);
         boolean noParamsVisible = "Inventory Stock Levels".equals(selectedReport);
         boolean customerSelectVisible = "Customer Purchase History".equals(selectedReport);
@@ -727,6 +730,16 @@ public class ReportController {
             customerReportComboBox.setManaged(false);
             technicianReportComboBox.setVisible(false);
             technicianReportComboBox.setManaged(false);
+        }
+
+        // Export only applies to certain reports - keep the button honest when the
+        // user switches report types without regenerating
+        if (exportToQuickBooksButton != null) {
+            boolean exportable = "Sales Report by Date Range".equals(selectedReport)
+                    || "Customer Purchase History".equals(selectedReport);
+            if (!exportable) {
+                exportToQuickBooksButton.setDisable(true);
+            }
         }
     }
 
@@ -758,7 +771,9 @@ public class ReportController {
         LocalDate fromDate = fromDatePicker.getValue();
         LocalDate toDate = toDatePicker.getValue();
 
-        if (("Sales Report by Date Range".equals(selectedReport) || "Product Sales Report".equals(selectedReport)) && 
+        if (("Sales Report by Date Range".equals(selectedReport) || "Product Sales Report".equals(selectedReport)
+                || "Customer Purchase History".equals(selectedReport) || "Technician Performance".equals(selectedReport)
+                || "Voided/Returned Sales Report".equals(selectedReport)) &&
             (fromDate == null || toDate == null)) {
             showAlert(Alert.AlertType.WARNING, "Date Missing", "Please select both From and To dates.");
             return;
@@ -803,12 +818,20 @@ public class ReportController {
                 exportToQuickBooksButton.setDisable(true); // Not applicable for technician performance
                 break;
             case "Daily Financial Summary":
-                if (fromDate == null || toDate == null) { 
+                if (fromDate == null || toDate == null) {
                     showAlert(Alert.AlertType.WARNING, "Date Missing", "Please select both From and To dates for Daily Financial Summary.");
                     return;
                 }
                 generateDailyFinancialSummaryReport(fromDate, toDate);
                 exportToQuickBooksButton.setDisable(true); // Summary report, not directly exportable
+                break;
+            case "Voided/Returned Sales Report":
+                if (fromDate == null || toDate == null) {
+                    showAlert(Alert.AlertType.WARNING, "Date Missing", "Please select both From and To dates for the Voided/Returned Sales Report.");
+                    return;
+                }
+                generateVoidedSalesReport(fromDate, toDate);
+                exportToQuickBooksButton.setDisable(true); // Audit report, not exportable
                 break;
         }
     }

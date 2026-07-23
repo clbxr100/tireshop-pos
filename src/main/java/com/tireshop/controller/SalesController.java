@@ -1235,6 +1235,10 @@ public class SalesController {
      * Refresh the sales list
      */
     public void refreshSales() {
+        // Remember the current selection so auto-refresh doesn't lose it
+        Sale selected = salesTable != null ? salesTable.getSelectionModel().getSelectedItem() : null;
+        Long selectedId = selected != null ? selected.getId() : null;
+
         // Get total count for pagination
         totalSales = salesService.getTotalSalesCount();
 
@@ -1246,6 +1250,16 @@ public class SalesController {
         List<Sale> sales = salesService.getSalesPaginated(currentPage, PAGE_SIZE);
         salesList = FXCollections.observableArrayList(sales);
         salesTable.setItems(salesList);
+
+        // Restore selection if the sale is still on this page
+        if (selectedId != null) {
+            for (Sale s : salesList) {
+                if (s.getId() != null && s.getId().equals(selectedId)) {
+                    salesTable.getSelectionModel().select(s);
+                    break;
+                }
+            }
+        }
 
         // Update pagination UI
         updatePaginationControls(maxPage);
@@ -2454,8 +2468,9 @@ public class SalesController {
                 if ("Default Printer".equals(printerNameFromDialog)) {
                     printerNameFromDialog = null; // Let PrinterService use its default or system default
                 }
-                
-                int numberOfCopies = copiesSpinner.getValue();
+
+                Integer copiesValue = copiesSpinner.getValue();
+                int numberOfCopies = copiesValue != null && copiesValue > 0 ? copiesValue : 1;
                 boolean allPrinted = true;
                 String receiptType;
                 
@@ -3678,10 +3693,15 @@ public class SalesController {
                     if (spinner == null) {
                         ReturnItemRow row = getTableRow().getItem();
                         if (row != null) {
-                            spinner = new Spinner<>(0, row.getItem().getQuantity(), 0);
+                            // Max returnable = units still outstanding (some may already be returned)
+                            int maxReturnable = row.getItem().getQuantity() - row.getItem().getQuantityReturned();
+                            spinner = new Spinner<>(0, Math.max(maxReturnable, 0), 0);
                             spinner.setEditable(true);
                             spinner.setPrefWidth(80);
                             spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+                                if (newVal == null) {
+                                    return; // editable spinner cleared - ignore until valid again
+                                }
                                 row.returnQuantityProperty().set(newVal);
                                 // Automatically check/uncheck the checkbox based on quantity
                                 if (newVal > 0) {
@@ -3744,20 +3764,28 @@ public class SalesController {
             Optional<String> reasonResult = reasonDialog.showAndWait();
             if (reasonResult.isPresent()) {
                 String reason = reasonResult.get();
-                
-                // Calculate refund amount
-                BigDecimal refundAmount = itemsToReturn.stream()
+
+                // Estimate the refund proportionally to the sale's totals so the
+                // estimate includes tax (and any discount), not just raw item prices
+                BigDecimal itemsSubtotal = itemsToReturn.stream()
                     .map(ri -> ri.item.getUnitPrice().multiply(BigDecimal.valueOf(ri.quantity)))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-                
+                BigDecimal saleSubtotal = sale.getSubtotal() != null ? sale.getSubtotal() : BigDecimal.ZERO;
+                BigDecimal preReturnTotal = sale.getTotal() != null ? sale.getTotal() : BigDecimal.ZERO;
+                BigDecimal refundEstimate = itemsSubtotal;
+                if (saleSubtotal.compareTo(BigDecimal.ZERO) > 0) {
+                    refundEstimate = itemsSubtotal.multiply(preReturnTotal)
+                            .divide(saleSubtotal, 2, java.math.RoundingMode.HALF_UP);
+                }
+
                 // Confirm
                 if (showConfirmationDialog("Confirm Partial Return",
                         "Returning " + itemsToReturn.size() + " item type(s)\n" +
-                        "Refund Amount: $" + refundAmount + "\n\n" +
+                        "Estimated Refund: $" + refundEstimate + "\n\n" +
                         "Items will be returned to inventory.\n" +
                         "Return receipt will be printed.",
                         owner)) {
-                    
+
                     // Process partial return
                     salesService.partialReturnSale(sale.getId(), itemsToReturn, reason).ifPresentOrElse(
                         updatedSale -> {
@@ -3765,14 +3793,18 @@ public class SalesController {
                             if (mainView != null) {
                                 mainView.refreshTabsForDataChange("all");
                             }
-                            
+
+                            // Exact refund = what the sale total actually dropped by
+                            BigDecimal updatedTotal = updatedSale.getTotal() != null ? updatedSale.getTotal() : BigDecimal.ZERO;
+                            BigDecimal exactRefund = preReturnTotal.subtract(updatedTotal);
+
                             showAlert("Partial Return Processed",
                                     "Items returned to inventory.\n" +
-                                    "Refund: $" + refundAmount,
+                                    "Refund: $" + exactRefund,
                                     Alert.AlertType.INFORMATION);
-                            
+
                             // Show print dialog for partial return receipt
-                            printPartialReturnReceipt(updatedSale, itemsToReturn, refundAmount, owner);
+                            printPartialReturnReceipt(updatedSale, itemsToReturn, exactRefund, owner);
                         },
                         () -> showAlert("Return Failed", "Could not process partial return.", Alert.AlertType.ERROR)
                     );
@@ -3902,8 +3934,9 @@ public class SalesController {
                 if ("Default Printer".equals(printerNameFromDialog)) {
                     printerNameFromDialog = null; // Let PrinterService use its default
                 }
-                
-                int numberOfCopies = copiesSpinner.getValue();
+
+                Integer copiesValue = copiesSpinner.getValue();
+                int numberOfCopies = copiesValue != null && copiesValue > 0 ? copiesValue : 1;
                 boolean allPrinted = true;
                 
                 // Print multiple copies

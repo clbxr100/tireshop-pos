@@ -42,6 +42,22 @@ public class AppointmentController {
     
     private TableView<Appointment> appointmentsTable;
     private ObservableList<Appointment> appointmentsList;
+
+    // List view date filter - remembered so auto-refresh doesn't wipe an active search
+    private DatePicker listFromDatePicker;
+    private DatePicker listToDatePicker;
+    private boolean listDateFilterActive = false;
+
+    // Calendar view references - kept so refreshAllCalendarViews() can actually
+    // rebuild the day/week/month grids after any appointment change
+    private DatePicker dayViewDatePicker;
+    private ComboBox<Technician> dayViewTechnicianFilter;
+    private ComboBox<String> dayViewStatusFilter;
+    private VBox dayViewContainer;
+    private DatePicker weekViewPicker;
+    private GridPane weekViewGrid;
+    private DatePicker monthViewPicker;
+    private GridPane monthViewGrid;
     
     public AppointmentController(AppointmentDao appointmentDao, 
                               CustomerDao customerDao,
@@ -153,6 +169,7 @@ public class AppointmentController {
         
         DatePicker datePicker = new DatePicker(LocalDate.now());
         datePicker.setPrefWidth(160);
+        datePicker.setEditable(false); // Prevent clearing to null which would NPE the refresh handlers
         datePicker.setStyle("-fx-padding: 6 12; -fx-background-radius: 6px; -fx-border-color: #ced4da; -fx-border-radius: 6px;");
         
         // View type toggle with modern styling
@@ -218,32 +235,38 @@ public class AppointmentController {
         
         scrollView.setContent(mainContent);
         content.setCenter(scrollView);
-        
+
+        // Keep references so refreshAllCalendarViews() can rebuild this view later
+        this.dayViewDatePicker = datePicker;
+        this.dayViewTechnicianFilter = technicianFilter;
+        this.dayViewStatusFilter = statusFilter;
+        this.dayViewContainer = mainContent;
+
         // Event handlers
         newAppointmentBtn.setOnAction(e -> {
             Optional<Appointment> newAppointment = showNewAppointmentDialog(stage);
             if (newAppointment.isPresent()) {
-                refreshCalendarView(datePicker.getValue(), technicianFilter.getValue(), 
-                    statusFilter.getValue(), mainContent);
                 if (appointmentsTable != null) {
                     refreshAppointments();
                 }
+                refreshAllCalendarViews();
             }
         });
-        
+
         refreshBtn.setOnAction(e -> {
-            refreshCalendarView(datePicker.getValue(), technicianFilter.getValue(), 
+            LocalDate date = datePicker.getValue() != null ? datePicker.getValue() : LocalDate.now();
+            refreshCalendarView(date, technicianFilter.getValue(),
                 statusFilter.getValue(), mainContent);
         });
-        
+
         // Navigation handlers
         prevBtn.setOnAction(e -> {
-            LocalDate currentDate = datePicker.getValue();
+            LocalDate currentDate = datePicker.getValue() != null ? datePicker.getValue() : LocalDate.now();
             datePicker.setValue(currentDate.minusDays(1));
         });
-        
+
         nextBtn.setOnAction(e -> {
-            LocalDate currentDate = datePicker.getValue();
+            LocalDate currentDate = datePicker.getValue() != null ? datePicker.getValue() : LocalDate.now();
             datePicker.setValue(currentDate.plusDays(1));
         });
         
@@ -330,10 +353,12 @@ public class AppointmentController {
         // Get appointments with filters
         List<Appointment> appointments = appointmentDao.findByDate(date);
         
-        // Apply filters
+        // Apply filters (compare technicians by ID - each DAO call returns different
+        // Java instances for the same row, so object identity always fails)
         if (technicianFilter != null) {
             appointments = appointments.stream()
-                .filter(a -> a.getTechnician() != null && a.getTechnician().equals(technicianFilter))
+                .filter(a -> a.getTechnician() != null && a.getTechnician().getId() != null
+                        && a.getTechnician().getId().equals(technicianFilter.getId()))
                 .collect(Collectors.toList());
         }
         
@@ -561,8 +586,7 @@ public class AppointmentController {
                 if (editedAppointment.isPresent()) {
                     // Refresh the views
                     refreshAppointments();
-                    System.out.println("[AppointmentController] Appointment edited, list view refreshed");
-                    // Calendar will refresh on next tab switch
+                    refreshAllCalendarViews();
                 }
             } else if (result.get() == deleteButtonType) {
                 handleDeleteAppointment(appointment);
@@ -614,6 +638,7 @@ public class AppointmentController {
         
         DatePicker weekPicker = new DatePicker(LocalDate.now());
         weekPicker.setPrefWidth(150);
+        weekPicker.setEditable(false); // Prevent clearing to null which would NPE the handlers
         
         Label weekRangeLabel = new Label();
         updateWeekRangeLabel(weekRangeLabel, weekPicker.getValue());
@@ -631,15 +656,19 @@ public class AppointmentController {
         GridPane weekGrid = createWeekGrid(weekPicker.getValue());
         scrollPane.setContent(weekGrid);
         content.setCenter(scrollPane);
-        
+
+        // Keep references so refreshAllCalendarViews() can rebuild this view later
+        this.weekViewPicker = weekPicker;
+        this.weekViewGrid = weekGrid;
+
         // Event handlers
         newAppointmentBtn.setOnAction(e -> {
             Optional<Appointment> newAppointment = showNewAppointmentDialog(stage);
             if (newAppointment.isPresent()) {
-                refreshWeekView(weekPicker.getValue(), weekGrid);
                 if (appointmentsTable != null) {
                     refreshAppointments();
                 }
+                refreshAllCalendarViews();
             }
         });
         
@@ -819,9 +848,14 @@ public class AppointmentController {
     }
     
     private void showNewAppointmentDialogForDateTime(LocalDate date, LocalTime time) {
-        // This would be similar to showNewAppointmentDialog but with pre-filled date/time
-        // For now, just show the regular dialog
-        showNewAppointmentDialog(null);
+        // Pre-fill the dialog with the date/time slot the user clicked on
+        Optional<Appointment> newAppointment = showNewAppointmentDialog(null, date, time);
+        if (newAppointment.isPresent()) {
+            if (appointmentsTable != null) {
+                refreshAppointments();
+            }
+            refreshAllCalendarViews();
+        }
     }
     
     /**
@@ -868,6 +902,7 @@ public class AppointmentController {
         
         DatePicker monthPicker = new DatePicker(LocalDate.now());
         monthPicker.setPrefWidth(150);
+        monthPicker.setEditable(false); // Prevent clearing to null which would NPE the handlers
         
         Label monthYearLabel = new Label();
         updateMonthYearLabel(monthYearLabel, monthPicker.getValue());
@@ -885,15 +920,19 @@ public class AppointmentController {
         GridPane monthGrid = createMonthGrid(monthPicker.getValue());
         scrollPane.setContent(monthGrid);
         content.setCenter(scrollPane);
-        
+
+        // Keep references so refreshAllCalendarViews() can rebuild this view later
+        this.monthViewPicker = monthPicker;
+        this.monthViewGrid = monthGrid;
+
         // Event handlers
         newAppointmentBtn.setOnAction(e -> {
             Optional<Appointment> newAppointment = showNewAppointmentDialog(stage);
             if (newAppointment.isPresent()) {
-                refreshMonthView(monthPicker.getValue(), monthGrid);
                 if (appointmentsTable != null) {
                     refreshAppointments();
                 }
+                refreshAllCalendarViews();
             }
         });
         
@@ -1198,15 +1237,18 @@ public class AppointmentController {
         
         DatePicker fromDatePicker = new DatePicker(LocalDate.now());
         DatePicker toDatePicker = new DatePicker(LocalDate.now().plusDays(7));
+        this.listFromDatePicker = fromDatePicker;
+        this.listToDatePicker = toDatePicker;
         Button searchBtn = new Button("Search");
+        Button showAllBtn = new Button("Show All");
         Button newAppointmentBtn = new Button("New Appointment");
         Button editAppointmentBtn = new Button("Edit");
         Button deleteAppointmentBtn = new Button("Delete");
-        
+
         controls.getChildren().addAll(
                 new Label("From:"), fromDatePicker,
                 new Label("To:"), toDatePicker,
-                searchBtn, newAppointmentBtn, editAppointmentBtn, deleteAppointmentBtn);
+                searchBtn, showAllBtn, newAppointmentBtn, editAppointmentBtn, deleteAppointmentBtn);
                 
         content.setTop(controls);
         
@@ -1221,28 +1263,20 @@ public class AppointmentController {
         newAppointmentBtn.setOnAction(e -> {
             Optional<Appointment> newAppointmentOptional = showNewAppointmentDialog(stage);
             if (newAppointmentOptional.isPresent()) {
-                System.out.println("[ListView] New appointment created: " + newAppointmentOptional.get().getTitle());
-                System.out.println("[ListView] Refreshing List View.");
                 refreshAppointments(); // Refresh the list view table
-            } else {
-                System.out.println("[ListView] New appointment dialog cancelled or failed.");
+                refreshAllCalendarViews(); // And the day/week/month grids
             }
         });
-        
+
         editAppointmentBtn.setOnAction(e -> {
-            System.out.println("[AppointmentController] Edit button clicked");
             Appointment selectedAppointment = appointmentsTable.getSelectionModel().getSelectedItem();
             if (selectedAppointment != null) {
-                System.out.println("[AppointmentController] Selected appointment: " + selectedAppointment.getTitle());
                 Optional<Appointment> editedAppointment = showEditAppointmentDialog(stage, selectedAppointment);
                 if (editedAppointment.isPresent()) {
-                    System.out.println("[AppointmentController] Appointment edited successfully");
                     refreshAppointments();
-                } else {
-                    System.out.println("[AppointmentController] Edit dialog cancelled");
+                    refreshAllCalendarViews();
                 }
             } else {
-                System.out.println("[AppointmentController] No appointment selected");
                 showAlert("No Selection", "Please select an appointment to edit.", Alert.AlertType.WARNING);
             }
         });
@@ -1259,10 +1293,16 @@ public class AppointmentController {
         searchBtn.setOnAction(e -> {
             LocalDate fromDate = fromDatePicker.getValue();
             LocalDate toDate = toDatePicker.getValue();
-            
+
             if (fromDate != null && toDate != null) {
+                listDateFilterActive = true;
                 searchAppointments(fromDate, toDate);
             }
+        });
+
+        showAllBtn.setOnAction(e -> {
+            listDateFilterActive = false;
+            refreshAppointments();
         });
         
         tab.setContent(content);
@@ -1613,27 +1653,63 @@ public class AppointmentController {
     }
     
     /**
-     * Refresh all calendar views (day/week) after appointment changes
+     * Refresh all calendar views (day/week/month) after appointment changes
+     * so no view keeps showing stale (or deleted) appointments.
      */
     private void refreshAllCalendarViews() {
-        // This will be called after any appointment update
-        // Calendar views will auto-refresh on next tab switch
-        System.out.println("[AppointmentController] Calendar views will refresh on next view");
+        try {
+            if (dayViewContainer != null && dayViewDatePicker != null) {
+                LocalDate date = dayViewDatePicker.getValue() != null
+                        ? dayViewDatePicker.getValue() : LocalDate.now();
+                refreshCalendarView(date,
+                        dayViewTechnicianFilter != null ? dayViewTechnicianFilter.getValue() : null,
+                        dayViewStatusFilter != null ? dayViewStatusFilter.getValue() : null,
+                        dayViewContainer);
+            }
+            if (weekViewGrid != null && weekViewPicker != null) {
+                LocalDate date = weekViewPicker.getValue() != null
+                        ? weekViewPicker.getValue() : LocalDate.now();
+                refreshWeekView(date, weekViewGrid);
+            }
+            if (monthViewGrid != null && monthViewPicker != null) {
+                LocalDate date = monthViewPicker.getValue() != null
+                        ? monthViewPicker.getValue() : LocalDate.now();
+                refreshMonthView(date, monthViewGrid);
+            }
+        } catch (Exception e) {
+            System.err.println("[AppointmentController] Error refreshing calendar views: " + e.getMessage());
+        }
     }
     
     /**
      * Refresh the appointments list
      */
     public void refreshAppointments() {
-        System.out.println("[refreshAppointments] Fetching all appointments from DAO...");
-        List<Appointment> appointments = appointmentDao.findAll();
-        System.out.println("[refreshAppointments] Found " + appointments.size() + " total appointments.");
+        // Remember the current selection so auto-refresh doesn't lose it
+        Appointment selected = appointmentsTable != null
+                ? appointmentsTable.getSelectionModel().getSelectedItem() : null;
+        Long selectedId = selected != null ? selected.getId() : null;
+
+        List<Appointment> appointments;
+        // Re-apply the date filter if the user ran a search - don't wipe their results
+        if (listDateFilterActive && listFromDatePicker != null && listToDatePicker != null
+                && listFromDatePicker.getValue() != null && listToDatePicker.getValue() != null) {
+            appointments = appointmentDao.findBetweenDates(listFromDatePicker.getValue(), listToDatePicker.getValue());
+        } else {
+            appointments = appointmentDao.findAll();
+        }
         appointmentsList = FXCollections.observableArrayList(appointments);
         if (appointmentsTable != null) {
             appointmentsTable.setItems(appointmentsList);
-            System.out.println("[refreshAppointments] appointmentsTable updated.");
-        } else {
-            System.out.println("[refreshAppointments] appointmentsTable is null, cannot update.");
+            // Restore selection if the appointment still exists in the results
+            if (selectedId != null) {
+                for (Appointment a : appointmentsList) {
+                    if (a.getId() != null && a.getId().equals(selectedId)) {
+                        appointmentsTable.getSelectionModel().select(a);
+                        break;
+                    }
+                }
+            }
         }
     }
     
@@ -1662,6 +1738,18 @@ public class AppointmentController {
      * @return Optional containing the created appointment, or empty if cancelled.
      */
     public Optional<Appointment> showNewAppointmentDialog(Stage owner) {
+        return showNewAppointmentDialog(owner, null, null);
+    }
+
+    /**
+     * Show dialog to create a new appointment, optionally pre-filled with the
+     * date/time the user clicked on in a calendar view.
+     * @param owner The owner window
+     * @param prefilledDate Date to pre-select (null = today)
+     * @param prefilledStartTime Start time to pre-select (null = 9:00 AM)
+     * @return Optional containing the created appointment, or empty if cancelled.
+     */
+    public Optional<Appointment> showNewAppointmentDialog(Stage owner, LocalDate prefilledDate, LocalTime prefilledStartTime) {
         Dialog<Appointment> dialog = new Dialog<>();
         dialog.setTitle("New Appointment");
         dialog.setHeaderText("Create New Appointment");
@@ -1695,8 +1783,9 @@ public class AppointmentController {
         ComboBox<Technician> technicianComboBox = new ComboBox<>();
         technicianComboBox.setPromptText("Select Technician");
         
-        DatePicker datePicker = new DatePicker(LocalDate.now());
-        
+        DatePicker datePicker = new DatePicker(prefilledDate != null ? prefilledDate : LocalDate.now());
+        datePicker.setEditable(false); // Prevent clearing to null which would NPE on save
+
         ComboBox<String> startTimeComboBox = new ComboBox<>();
         ComboBox<String> endTimeComboBox = new ComboBox<>();
         
@@ -1715,8 +1804,18 @@ public class AppointmentController {
             }
         }
         
-        startTimeComboBox.setValue("09:00 AM");
-        endTimeComboBox.setValue("10:00 AM");
+        if (prefilledStartTime != null) {
+            // Round to the nearest 30-minute slot offered by the dropdowns
+            LocalTime rounded = prefilledStartTime.withMinute(prefilledStartTime.getMinute() < 30 ? 0 : 30)
+                    .withSecond(0).withNano(0);
+            if (rounded.isBefore(LocalTime.of(8, 0))) rounded = LocalTime.of(8, 0);
+            if (rounded.isAfter(LocalTime.of(17, 30))) rounded = LocalTime.of(17, 30);
+            startTimeComboBox.setValue(formatTimeForComboBox(rounded));
+            endTimeComboBox.setValue(formatTimeForComboBox(rounded.plusHours(1)));
+        } else {
+            startTimeComboBox.setValue("09:00 AM");
+            endTimeComboBox.setValue("10:00 AM");
+        }
         
         ComboBox<AppointmentStatus> statusComboBox = new ComboBox<>();
         statusComboBox.getItems().addAll(AppointmentStatus.values());
@@ -1827,30 +1926,41 @@ public class AppointmentController {
         content.getChildren().add(grid);
         
         dialog.getDialogPane().setContent(new ScrollPane(content));
-        
-        // Convert result
+
+        // Validate BEFORE the dialog closes - on failure consume the event so the
+        // dialog stays open and the user's input isn't wiped
+        Button createButton = (Button) dialog.getDialogPane().lookupButton(createButtonType);
+        createButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            if (titleField.getText() == null || titleField.getText().trim().isEmpty()) {
+                showAlert("Missing Information", "Please enter a title for the appointment.", Alert.AlertType.ERROR);
+                event.consume();
+                return;
+            }
+            if (technicianComboBox.getValue() == null) {
+                showAlert("Missing Information", "Please select a technician.", Alert.AlertType.ERROR);
+                event.consume();
+                return;
+            }
+            if (datePicker.getValue() == null) {
+                showAlert("Missing Information", "Please pick a date for the appointment.", Alert.AlertType.ERROR);
+                event.consume();
+                return;
+            }
+            LocalTime startTime = parseTime(startTimeComboBox.getValue());
+            LocalTime endTime = parseTime(endTimeComboBox.getValue());
+            if (!endTime.isAfter(startTime)) {
+                showAlert("Invalid Time", "End time must be after start time.", Alert.AlertType.ERROR);
+                event.consume();
+            }
+        });
+
+        // Convert result (input is guaranteed valid - the filter above blocked bad input)
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == createButtonType) {
-                // Validate required fields
-                if (titleField.getText().isEmpty()) {
-                    showAlert("Missing Information", "Please enter a title for the appointment.", Alert.AlertType.ERROR);
-                    return null;
-                }
-                
-                if (technicianComboBox.getValue() == null) {
-                    showAlert("Missing Information", "Please select a technician.", Alert.AlertType.ERROR);
-                    return null;
-                }
-                
                 // Parse times
                 LocalTime startTime = parseTime(startTimeComboBox.getValue());
                 LocalTime endTime = parseTime(endTimeComboBox.getValue());
-                
-                if (endTime.isBefore(startTime) || endTime.equals(startTime)) {
-                    showAlert("Invalid Time", "End time must be after start time.", Alert.AlertType.ERROR);
-                    return null;
-                }
-                
+
                 // Create appointment
                 Appointment appointment = new Appointment();
                 appointment.setTitle(titleField.getText());
@@ -1942,7 +2052,8 @@ public class AppointmentController {
         technicianComboBox.setPromptText("Select Technician");
         
         DatePicker datePicker = new DatePicker(appointment.getStartTime().toLocalDate());
-        
+        datePicker.setEditable(false); // Prevent clearing to null which would NPE on save
+
         ComboBox<String> startTimeComboBox = new ComboBox<>();
         ComboBox<String> endTimeComboBox = new ComboBox<>();
         
@@ -1977,7 +2088,16 @@ public class AppointmentController {
         // Load customers from database
         List<Customer> customers = customerDao.findAll();
         customerComboBox.getItems().addAll(customers);
-        customerComboBox.setValue(appointment.getCustomer());
+        // Select the matching instance BY ID - appointment.getCustomer() is a different
+        // object instance than the freshly loaded ones, so identity comparison would fail
+        if (appointment.getCustomer() != null) {
+            for (Customer c : customers) {
+                if (c.getId() != null && c.getId().equals(appointment.getCustomer().getId())) {
+                    customerComboBox.setValue(c);
+                    break;
+                }
+            }
+        }
         
         // Set converter to display customer name
         customerComboBox.setConverter(new javafx.util.StringConverter<Customer>() {
@@ -1995,7 +2115,15 @@ public class AppointmentController {
         // Load technicians from database
         List<Technician> technicians = technicianDao.findAll();
         technicianComboBox.getItems().addAll(technicians);
-        technicianComboBox.setValue(appointment.getTechnician());
+        // Select the matching instance BY ID (same detached-instance issue as customer)
+        if (appointment.getTechnician() != null) {
+            for (Technician t : technicians) {
+                if (t.getId() != null && t.getId().equals(appointment.getTechnician().getId())) {
+                    technicianComboBox.setValue(t);
+                    break;
+                }
+            }
+        }
         
         // Set converter to display technician name
         technicianComboBox.setConverter(new javafx.util.StringConverter<Technician>() {
@@ -2014,23 +2142,39 @@ public class AppointmentController {
         if (appointment.getCustomer() != null) {
             List<Vehicle> vehicles = vehicleDao.findByCustomerId(appointment.getCustomer().getId());
             vehicleComboBox.getItems().addAll(vehicles);
-            vehicleComboBox.setValue(appointment.getVehicle());
+            // Select the matching instance BY ID - appointment.getVehicle() is a
+            // different object instance than the freshly loaded ones
+            if (appointment.getVehicle() != null) {
+                for (Vehicle v : vehicles) {
+                    if (v.getId() != null && v.getId().equals(appointment.getVehicle().getId())) {
+                        vehicleComboBox.setValue(v);
+                        break;
+                    }
+                }
+            }
         }
-        
+
         // When customer is selected, load their vehicles
         customerComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
             vehicleComboBox.getItems().clear();
-            
+
             if (newVal != null) {
                 vehicleComboBox.setDisable(false);
-                
+
                 // Load vehicles for selected customer
                 List<Vehicle> vehicles = vehicleDao.findByCustomerId(newVal.getId());
                 vehicleComboBox.getItems().addAll(vehicles);
-                
-                // If the old customer is the same, restore the vehicle selection
-                if (oldVal != null && oldVal.equals(newVal) && appointment.getVehicle() != null) {
-                    vehicleComboBox.setValue(appointment.getVehicle());
+
+                // If the same customer is re-selected, restore the original vehicle
+                // (compare BY ID - equals() is identity here so it never matched)
+                if (oldVal != null && newVal.getId() != null && newVal.getId().equals(oldVal.getId())
+                        && appointment.getVehicle() != null) {
+                    for (Vehicle v : vehicles) {
+                        if (v.getId() != null && v.getId().equals(appointment.getVehicle().getId())) {
+                            vehicleComboBox.setValue(v);
+                            break;
+                        }
+                    }
                 }
             } else {
                 vehicleComboBox.setDisable(true);
@@ -2084,30 +2228,41 @@ public class AppointmentController {
         content.getChildren().add(grid);
         
         dialog.getDialogPane().setContent(new ScrollPane(content));
-        
-        // Convert result
+
+        // Validate BEFORE the dialog closes - on failure consume the event so the
+        // dialog stays open and the user's edits aren't wiped
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
+        saveButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            if (titleField.getText() == null || titleField.getText().trim().isEmpty()) {
+                showAlert("Missing Information", "Please enter a title for the appointment.", Alert.AlertType.ERROR);
+                event.consume();
+                return;
+            }
+            if (technicianComboBox.getValue() == null) {
+                showAlert("Missing Information", "Please select a technician.", Alert.AlertType.ERROR);
+                event.consume();
+                return;
+            }
+            if (datePicker.getValue() == null) {
+                showAlert("Missing Information", "Please pick a date for the appointment.", Alert.AlertType.ERROR);
+                event.consume();
+                return;
+            }
+            LocalTime newStartTime = parseTime(startTimeComboBox.getValue());
+            LocalTime newEndTime = parseTime(endTimeComboBox.getValue());
+            if (!newEndTime.isAfter(newStartTime)) {
+                showAlert("Invalid Time", "End time must be after start time.", Alert.AlertType.ERROR);
+                event.consume();
+            }
+        });
+
+        // Convert result (input is guaranteed valid - the filter above blocked bad input)
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                // Validate required fields
-                if (titleField.getText().isEmpty()) {
-                    showAlert("Missing Information", "Please enter a title for the appointment.", Alert.AlertType.ERROR);
-                    return null;
-                }
-                
-                if (technicianComboBox.getValue() == null) {
-                    showAlert("Missing Information", "Please select a technician.", Alert.AlertType.ERROR);
-                    return null;
-                }
-                
                 // Parse times
                 LocalTime newStartTime = parseTime(startTimeComboBox.getValue());
                 LocalTime newEndTime = parseTime(endTimeComboBox.getValue());
-                
-                if (newEndTime.isBefore(newStartTime) || newEndTime.equals(newStartTime)) {
-                    showAlert("Invalid Time", "End time must be after start time.", Alert.AlertType.ERROR);
-                    return null;
-                }
-                
+
                 // Update appointment
                 appointment.setTitle(titleField.getText());
                 appointment.setDescription(descriptionArea.getText());
@@ -2225,10 +2380,7 @@ public class AppointmentController {
                 appointmentDao.delete(appointment);
                 showAlert("Appointment Deleted", "The appointment has been deleted successfully.", Alert.AlertType.INFORMATION);
                 refreshAppointments(); // Refresh the list view
-                
-                // Optionally, if DayView is visible and on this date, refresh it.
-                // This part is complex because DayView's datePicker and scrollView are not directly accessible here.
-                // For now, List View refresh is guaranteed. Day view will update on next interaction/navigation.
+                refreshAllCalendarViews(); // Refresh the day/week/month grids too
 
             } catch (Exception e) {
                 showAlert("Error", "Could not delete the appointment: " + e.getMessage(), Alert.AlertType.ERROR);

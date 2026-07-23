@@ -96,6 +96,11 @@ public class AutoRefreshService {
                 // Run refresh on JavaFX Application Thread
                 javafx.application.Platform.runLater(() -> {
                     try {
+                        // Never refresh while a dialog/popup is open - it would wipe
+                        // whatever the user is working on (payment, new sale, edits...)
+                        if (mainView.isDialogOpen()) {
+                            return;
+                        }
                         mainView.refreshCurrentTab();  // Only refresh active tab for better performance
                         // Silent refresh - no console spam
                     } catch (Exception e) {

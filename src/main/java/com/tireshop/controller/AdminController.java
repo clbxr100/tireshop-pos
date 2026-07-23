@@ -131,13 +131,37 @@ public class AdminController {
     // For Integration Settings Tab - QuickBooks
     private TextField quickBooksCompanyFileField;
     private TextField quickBooksExportPathField;
-    
+
+    // For Integration Settings Tab - Email Notification Settings.
+    // Kept as instance fields so saveIntegrationSettings() can read them directly
+    // instead of walking the scene graph looking for a tab by name (which broke
+    // when the tab was renamed and silently discarded all email settings).
+    private TextField smtpHostField;
+    private TextField smtpPortField;
+    private TextField integrationEmailUsernameField;
+    private PasswordField integrationEmailPasswordField;
+    private TextField integrationEmailFromField;
+    private TextField managerEmailField;
+    private TextField emailShopNameField;
+    private TextField emailShopAddressField;
+    private TextField emailShopPhoneField;
+
     // Barcode scanning service for live lookups
     private BarcodeScannerService barcodeScannerService;
 
     public AdminController() {
+        this(new UserService());
+    }
+
+    /**
+     * Create an AdminController that shares the given UserService.
+     * Sharing matters because UserService caches role-tab permissions in memory -
+     * with a separate instance, permission edits made here were invisible to the
+     * rest of the app until restart.
+     */
+    public AdminController(UserService userService) {
         this.settingsService = SettingsService.getInstance();
-        this.userService = new UserService();
+        this.userService = userService;
         this.barcodeScannerService = new BarcodeScannerService();
         System.out.println("[CONSTRUCTOR] AdminController instance created, UserService initialized.");
         ALL_USERS_PLACEHOLDER.setUsername("All Users");
@@ -659,7 +683,7 @@ public class AdminController {
         
         ComboBox<String> roleFilterCombo = new ComboBox<>();
         roleFilterCombo.setPromptText("Filter by role");
-        roleFilterCombo.getItems().addAll("All Roles", "ADMIN", "EMPLOYEE", "MANAGER", "CASHIER");
+        roleFilterCombo.getItems().addAll("All Roles", "ADMIN", "MANAGER", "FRONT_DESK", "TECHNICIAN");
         roleFilterCombo.setValue("All Roles");
         roleFilterCombo.setOnAction(e -> filterUsersByRole(roleFilterCombo.getValue()));
         
@@ -1009,7 +1033,8 @@ public class AdminController {
         Label weekLabel = new Label("Select Week:");
         DatePicker weekPicker = new DatePicker(LocalDate.now());
         weekPicker.setPromptText("Select any day in the week");
-        
+        weekPicker.setEditable(false); // Prevent clearing to null which would NPE on OK
+
         // Calculate week range
         Label weekRangeLabel = new Label();
         updateWeekRangeLabel(weekPicker.getValue(), weekRangeLabel);
@@ -1070,11 +1095,15 @@ public class AdminController {
                     showAlert(Alert.AlertType.WARNING, "No Selection", "Please select at least one employee.");
                     return null;
                 }
-                
+
                 LocalDate selectedDate = weekPicker.getValue();
+                if (selectedDate == null) {
+                    showAlert(Alert.AlertType.WARNING, "No Week Selected", "Please pick a week for the report.");
+                    return null;
+                }
                 LocalDate weekStart = selectedDate.with(java.time.DayOfWeek.MONDAY);
                 LocalDate weekEnd = selectedDate.with(java.time.DayOfWeek.SUNDAY);
-                
+
                 printWeeklyTimeReport(new ArrayList<>(selectedEmployees), weekStart, weekEnd);
             }
             return null;
@@ -1084,6 +1113,10 @@ public class AdminController {
     }
     
     private void updateWeekRangeLabel(LocalDate date, Label label) {
+        if (date == null) {
+            label.setText("Week: (no date selected)");
+            return;
+        }
         LocalDate weekStart = date.with(java.time.DayOfWeek.MONDAY);
         LocalDate weekEnd = date.with(java.time.DayOfWeek.SUNDAY);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
@@ -1300,7 +1333,7 @@ public class AdminController {
                 for (Map.Entry<String, List<TimeEntry>> userEntries : entriesByUserId.entrySet()) {
                     String userId = userEntries.getKey();
                     List<TimeEntry> userTimeEntries = userEntries.getValue();
-                    
+
                     // Find user name
                     String username = userId;
                     Optional<User> userOpt = allUsersForFilter.stream()
@@ -1309,26 +1342,31 @@ public class AdminController {
                     if (userOpt.isPresent()) {
                         username = userOpt.get().getUsername();
                     }
-                    
-                    // Calculate total hours for the period
+
+                    // Regular/overtime hours with the 40-hour threshold applied PER
+                    // WORK WEEK (Mon-Sun), not across the whole selected period
+                    double[] regOt = calculateRegularAndOvertime(userTimeEntries);
+                    double regularHours = regOt[0];
+                    double overtimeHours = regOt[1];
                     double totalHours = userTimeEntries.stream()
                         .mapToDouble(TimeEntry::getDurationHours)
                         .sum();
-                    
-                    double regularHours = Math.min(totalHours, 40);
-                    double overtimeHours = Math.max(0, totalHours - 40);
-                    
-                    // Write each entry
+
+                    // Write each entry (regular/overtime only on the totals row -
+                    // stamping period totals on every row was meaningless)
                     for (TimeEntry entry : userTimeEntries) {
                         csv.append(username).append(",");
                         csv.append(entry.getClockIn().toLocalDate()).append(",");
                         csv.append(entry.getClockIn().format(DateTimeFormatter.ofPattern("hh:mm a"))).append(",");
-                        csv.append(entry.getClockOut() != null ? 
+                        csv.append(entry.getClockOut() != null ?
                             entry.getClockOut().format(DateTimeFormatter.ofPattern("hh:mm a")) : "").append(",");
-                        csv.append(String.format("%.2f", entry.getDurationHours())).append(",");
-                        csv.append(String.format("%.2f", regularHours)).append(",");
-                        csv.append(String.format("%.2f", overtimeHours)).append("\n");
+                        csv.append(String.format("%.2f", entry.getDurationHours())).append(",,\n");
                     }
+                    // Totals row for this employee
+                    csv.append(username).append(" (TOTAL),,,,");
+                    csv.append(String.format("%.2f", totalHours)).append(",");
+                    csv.append(String.format("%.2f", regularHours)).append(",");
+                    csv.append(String.format("%.2f", overtimeHours)).append("\n");
                 }
                 
                 // Write to file
@@ -1611,62 +1649,62 @@ public class AdminController {
 
         // Email Server Settings
         grid.add(new Label("SMTP Server:"), 0, 0);
-        TextField smtpHostField = new TextField();
+        smtpHostField = new TextField();
         smtpHostField.setPrefWidth(300);
         smtpHostField.setPromptText("smtp.gmail.com");
         grid.add(smtpHostField, 1, 0);
 
         grid.add(new Label("SMTP Port:"), 0, 1);
-        TextField smtpPortField = new TextField();
+        smtpPortField = new TextField();
         smtpPortField.setPrefWidth(100);
         smtpPortField.setPromptText("587");
         grid.add(smtpPortField, 1, 1);
 
         // Email Authentication
         grid.add(new Label("Email Username:"), 0, 2);
-        TextField emailUsernameField = new TextField();
-        emailUsernameField.setPrefWidth(300);
-        emailUsernameField.setPromptText("your-email@gmail.com");
-        grid.add(emailUsernameField, 1, 2);
+        integrationEmailUsernameField = new TextField();
+        integrationEmailUsernameField.setPrefWidth(300);
+        integrationEmailUsernameField.setPromptText("your-email@gmail.com");
+        grid.add(integrationEmailUsernameField, 1, 2);
 
         grid.add(new Label("Email Password:"), 0, 3);
-        PasswordField emailPasswordField = new PasswordField();
-        emailPasswordField.setPrefWidth(300);
-        emailPasswordField.setPromptText("App-specific password");
-        grid.add(emailPasswordField, 1, 3);
+        integrationEmailPasswordField = new PasswordField();
+        integrationEmailPasswordField.setPrefWidth(300);
+        integrationEmailPasswordField.setPromptText("App-specific password");
+        grid.add(integrationEmailPasswordField, 1, 3);
 
         // From Address
         grid.add(new Label("From Address:"), 0, 4);
-        TextField fromAddressField = new TextField();
-        fromAddressField.setPrefWidth(300);
-        fromAddressField.setPromptText("noreply@yourtireshop.com");
-        grid.add(fromAddressField, 1, 4);
+        integrationEmailFromField = new TextField();
+        integrationEmailFromField.setPrefWidth(300);
+        integrationEmailFromField.setPromptText("noreply@yourtireshop.com");
+        grid.add(integrationEmailFromField, 1, 4);
 
         // Manager Email (for alerts)
         grid.add(new Label("Manager Email:"), 0, 5);
-        TextField managerEmailField = new TextField();
+        managerEmailField = new TextField();
         managerEmailField.setPrefWidth(300);
         managerEmailField.setPromptText("manager@yourtireshop.com");
         grid.add(managerEmailField, 1, 5);
 
         // Shop Details for Email Templates
         grid.add(new Label("Shop Name:"), 0, 6);
-        TextField shopNameField = new TextField();
-        shopNameField.setPrefWidth(300);
-        shopNameField.setText(settingsService.getCompanyName());
-        grid.add(shopNameField, 1, 6);
+        emailShopNameField = new TextField();
+        emailShopNameField.setPrefWidth(300);
+        emailShopNameField.setText(settingsService.getCompanyName());
+        grid.add(emailShopNameField, 1, 6);
 
         grid.add(new Label("Shop Address:"), 0, 7);
-        TextField shopAddressField = new TextField();
-        shopAddressField.setPrefWidth(300);
-        shopAddressField.setText(settingsService.getCompanyAddress());
-        grid.add(shopAddressField, 1, 7);
+        emailShopAddressField = new TextField();
+        emailShopAddressField.setPrefWidth(300);
+        emailShopAddressField.setText(settingsService.getCompanyAddress());
+        grid.add(emailShopAddressField, 1, 7);
 
         grid.add(new Label("Shop Phone:"), 0, 8);
-        TextField shopPhoneField = new TextField();
-        shopPhoneField.setPrefWidth(300);
-        shopPhoneField.setText(settingsService.getCompanyPhone());
-        grid.add(shopPhoneField, 1, 8);
+        emailShopPhoneField = new TextField();
+        emailShopPhoneField.setPrefWidth(300);
+        emailShopPhoneField.setText(settingsService.getCompanyPhone());
+        grid.add(emailShopPhoneField, 1, 8);
 
         // Test Email Button
         Button testEmailButton = new Button("Send Test Email");
@@ -1674,9 +1712,9 @@ public class AdminController {
             // Save current settings temporarily
             settingsService.setSetting("email.smtp.host", smtpHostField.getText());
             settingsService.setSetting("email.smtp.port", smtpPortField.getText());
-            settingsService.setSetting("email.username", emailUsernameField.getText());
-            settingsService.setSetting("email.password", emailPasswordField.getText());
-            settingsService.setSetting("email.from", fromAddressField.getText());
+            settingsService.setSetting("email.username", integrationEmailUsernameField.getText());
+            settingsService.setSetting("email.password", integrationEmailPasswordField.getText());
+            settingsService.setSetting("email.from", integrationEmailFromField.getText());
             
             // Send test email
             com.tireshop.service.EmailService emailService = new com.tireshop.service.EmailService(settingsService);
@@ -1696,22 +1734,16 @@ public class AdminController {
         infoLabel.setWrapText(true);
         grid.add(infoLabel, 0, 9, 3, 1);
 
-        // Store field references for saving
-        grid.setUserData(new TextField[]{
-            smtpHostField, smtpPortField, emailUsernameField, emailPasswordField,
-            fromAddressField, managerEmailField, shopNameField, shopAddressField, shopPhoneField
-        });
-
         // Load current settings
         smtpHostField.setText(settingsService.getSetting("email.smtp.host", "smtp.gmail.com"));
         smtpPortField.setText(settingsService.getSetting("email.smtp.port", "587"));
-        emailUsernameField.setText(settingsService.getSetting("email.username", ""));
-        emailPasswordField.setText(settingsService.getSetting("email.password", ""));
-        fromAddressField.setText(settingsService.getSetting("email.from", "noreply@tireshop.com"));
+        integrationEmailUsernameField.setText(settingsService.getSetting("email.username", ""));
+        integrationEmailPasswordField.setText(settingsService.getSetting("email.password", ""));
+        integrationEmailFromField.setText(settingsService.getSetting("email.from", "noreply@tireshop.com"));
         managerEmailField.setText(settingsService.getSetting("manager.email", ""));
-        shopNameField.setText(settingsService.getSetting("shop.name", settingsService.getCompanyName()));
-        shopAddressField.setText(settingsService.getSetting("shop.address", settingsService.getCompanyAddress()));
-        shopPhoneField.setText(settingsService.getSetting("shop.phone", settingsService.getCompanyPhone()));
+        emailShopNameField.setText(settingsService.getSetting("shop.name", settingsService.getCompanyName()));
+        emailShopAddressField.setText(settingsService.getSetting("shop.address", settingsService.getCompanyAddress()));
+        emailShopPhoneField.setText(settingsService.getSetting("shop.phone", settingsService.getCompanyPhone()));
 
         return grid;
     }
@@ -1741,40 +1773,22 @@ public class AdminController {
             settingsService.setQuickBooksCompanyFile(quickBooksCompanyFileField.getText());
             settingsService.setQuickBooksExportPath(quickBooksExportPathField.getText());
             
-            // Save Email settings - find the email settings pane
-            TabPane integrationTabPane = (TabPane) stage.getScene().lookup(".tab-pane");
-            if (integrationTabPane != null) {
-                for (Tab tab : integrationTabPane.getTabs()) {
-                    if ("Integration Settings".equals(tab.getText())) {
-                        ScrollPane scrollPane = (ScrollPane) tab.getContent();
-                        VBox integrationContainer = (VBox) scrollPane.getContent();
-                        for (javafx.scene.Node node : integrationContainer.getChildren()) {
-                            if (node instanceof TitledPane) {
-                                TitledPane pane = (TitledPane) node;
-                                if ("Email Notification Settings".equals(pane.getText())) {
-                                    GridPane emailGrid = (GridPane) pane.getContent();
-                                    TextField[] fields = (TextField[]) emailGrid.getUserData();
-                                    if (fields != null && fields.length >= 9) {
-                                        // Save email settings from the field array
-                                        settingsService.setSetting("email.smtp.host", fields[0].getText());
-                                        settingsService.setSetting("email.smtp.port", fields[1].getText());
-                                        settingsService.setSetting("email.username", fields[2].getText());
-                                        settingsService.setSetting("email.password", fields[3].getText());
-                                        settingsService.setSetting("email.from", fields[4].getText());
-                                        settingsService.setSetting("manager.email", fields[5].getText());
-                                        settingsService.setSetting("shop.name", fields[6].getText());
-                                        settingsService.setSetting("shop.address", fields[7].getText());
-                                        settingsService.setSetting("shop.phone", fields[8].getText());
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        break;
-                    }
-                }
+            // Save Email settings - read the instance fields directly.
+            // (The old code walked the scene graph looking for a tab named
+            // "Integration Settings", but the tab is actually named
+            // "🔌 Integrations", so email settings were silently discarded.)
+            if (smtpHostField != null) {
+                settingsService.setSetting("email.smtp.host", smtpHostField.getText());
+                settingsService.setSetting("email.smtp.port", smtpPortField.getText());
+                settingsService.setSetting("email.username", integrationEmailUsernameField.getText());
+                settingsService.setSetting("email.password", integrationEmailPasswordField.getText());
+                settingsService.setSetting("email.from", integrationEmailFromField.getText());
+                settingsService.setSetting("manager.email", managerEmailField.getText());
+                settingsService.setSetting("shop.name", emailShopNameField.getText());
+                settingsService.setSetting("shop.address", emailShopAddressField.getText());
+                settingsService.setSetting("shop.phone", emailShopPhoneField.getText());
             }
-            
+
             settingsService.saveProperties();
             
             showAlert(Alert.AlertType.INFORMATION, "Settings Saved", "Integration settings have been saved successfully.");
@@ -1985,27 +1999,49 @@ public class AdminController {
         }
     }
     
+    /**
+     * Calculate regular and overtime hours for a set of time entries belonging to
+     * ONE user, applying the 40-hour overtime threshold PER WORK WEEK (Mon-Sun)
+     * instead of across the whole selected period.
+     * @param entries the user's time entries
+     * @return double[]{regularHours, overtimeHours}
+     */
+    private double[] calculateRegularAndOvertime(List<TimeEntry> entries) {
+        // Group hours by work week (Monday start, matching the weekly time report)
+        Map<LocalDate, Double> hoursByWeek = new HashMap<>();
+        for (TimeEntry entry : entries) {
+            if (entry.getClockIn() == null) continue;
+            LocalDate weekStart = entry.getClockIn().toLocalDate().with(java.time.DayOfWeek.MONDAY);
+            hoursByWeek.merge(weekStart, entry.getDurationHours(), Double::sum);
+        }
+        double regular = 0;
+        double overtime = 0;
+        for (double weekHours : hoursByWeek.values()) {
+            regular += Math.min(weekHours, 40);
+            overtime += Math.max(0, weekHours - 40);
+        }
+        return new double[]{regular, overtime};
+    }
+
     private void updateTimeSummary(List<TimeEntry> entries) {
         // Calculate totals
         double totalHours = entries.stream()
             .mapToDouble(TimeEntry::getDurationHours)
             .sum();
-        
-        // Group by user to calculate overtime properly
-        Map<String, Double> hoursByUser = entries.stream()
-            .collect(Collectors.groupingBy(
-                TimeEntry::getUserId,
-                Collectors.summingDouble(TimeEntry::getDurationHours)
-            ));
-        
+
+        // Group by user, then apply the 40-hour OT threshold per work week
+        Map<String, List<TimeEntry>> entriesByUser = entries.stream()
+            .collect(Collectors.groupingBy(TimeEntry::getUserId));
+
         double totalRegularHours = 0;
         double totalOvertimeHours = 0;
-        
-        for (Double userHours : hoursByUser.values()) {
-            totalRegularHours += Math.min(userHours, 40);
-            totalOvertimeHours += Math.max(0, userHours - 40);
+
+        for (List<TimeEntry> userEntries : entriesByUser.values()) {
+            double[] regOt = calculateRegularAndOvertime(userEntries);
+            totalRegularHours += regOt[0];
+            totalOvertimeHours += regOt[1];
         }
-        
+
         // Update labels - check if stage and scene are available
         if (stage != null && stage.getScene() != null) {
             Label totalHoursLabel = (Label) stage.getScene().lookup("#totalHoursLabel");
@@ -2129,6 +2165,10 @@ public class AdminController {
                             return null;
                         }
                     } else {
+                        // NOTE: userToEdit is the same instance shown in the table, so
+                        // these setters change what the table displays even before the
+                        // DB update happens. If the update fails we must refresh the
+                        // table from the DB to restore the real values.
                         userToEdit.setUsername(username);
                         if (!password.isEmpty()) {
                             userToEdit.setPassword(password);
@@ -2137,6 +2177,7 @@ public class AdminController {
                         userToEdit.setActive(isActive);
                         User updatedUser = userService.updateUser(userToEdit);
                         if (updatedUser == null) {
+                            refreshUserTable(); // undo the in-memory mutation in the UI
                             showAlert(Alert.AlertType.ERROR, "Update Failed", "Could not update user. Username might be taken or DB error.");
                             return null;
                         }
@@ -2145,6 +2186,7 @@ public class AdminController {
                     populateUserFilterComboBox();
                     populateRoleSelectComboBox();
                 } catch (Exception e) {
+                    refreshUserTable(); // undo any in-memory mutation in the UI
                     showAlert(Alert.AlertType.ERROR, "Save Error", "Error saving user: " + e.getMessage());
                     e.printStackTrace();
                     return null;
@@ -2616,6 +2658,10 @@ public class AdminController {
             settingsService.setSetting(com.tireshop.service.EmailService.KEY_FROM, emailFromField.getText().trim());
 
             settingsService.setTireApiLookupEnabled(tireApiLookupEnabledCheckBox.isSelected());
+
+            // Quick links - the Quick Links tab edits quickLinksData in memory and
+            // tells the user "Save All Settings" will persist them, so do that here
+            settingsService.saveQuickLinks(new ArrayList<>(quickLinksData));
 
             settingsService.saveProperties();
             showAlert(Alert.AlertType.INFORMATION, "Settings Saved", "Application settings have been saved successfully.");

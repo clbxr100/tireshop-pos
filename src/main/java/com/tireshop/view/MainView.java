@@ -51,6 +51,7 @@ import javafx.util.StringConverter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalTime;
@@ -132,6 +133,7 @@ public class MainView {
     // Customer table references for external refresh
     private TableView<Customer> customerTable;
     private TableView<Vehicle> vehicleTable;
+    private TextField customerSearchField;
     
     /**
      * Initialize the main view
@@ -208,18 +210,19 @@ public class MainView {
         SaleDao saleDao = new SaleDao(DatabaseManager.getSessionFactory());
         SaleItemDao saleItemDao = new SaleItemDao(DatabaseManager.getSessionFactory());
         com.tireshop.dao.SalePaymentDao salePaymentDao = new com.tireshop.dao.SalePaymentDao(DatabaseManager.getSessionFactory());
+        com.tireshop.dao.ChargeAccountPaymentDao chargeAccountPaymentDao = new com.tireshop.dao.ChargeAccountPaymentDao(DatabaseManager.getSessionFactory());
         VehicleDao vehicleDao = new VehicleDao(DatabaseManager.getSessionFactory());
         ServiceDao serviceDao = new ServiceDao(DatabaseManager.getSessionFactory());
         TechnicianDao technicianDao = new TechnicianDao(DatabaseManager.getSessionFactory());
         AppointmentDao appointmentDao = new AppointmentDao(DatabaseManager.getSessionFactory());
         ServiceRecordDao serviceRecordDao = new ServiceRecordDao(DatabaseManager.getSessionFactory());
-        
+
         // Create services
         this.inventoryService = new InventoryService(productDao, settingsService);
         this.emailService = new EmailService(settingsService);
         this.vehicleServiceHistoryService = new VehicleServiceHistoryService(serviceRecordDao, this.emailService, settingsService);
         this.salesService = new SalesService(
-                saleDao, saleItemDao, salePaymentDao, customerDao, vehicleDao, serviceDao, technicianDao, this.inventoryService, settingsService, this.vehicleServiceHistoryService);
+                saleDao, saleItemDao, salePaymentDao, customerDao, vehicleDao, serviceDao, technicianDao, chargeAccountPaymentDao, this.inventoryService, settingsService, this.vehicleServiceHistoryService);
 
         // Daily owner email report (scheduled + manual from Admin settings)
         this.dailyReportService = new com.tireshop.service.DailyReportService(
@@ -234,9 +237,11 @@ public class MainView {
                 this.mainViewInstance, settingsService);
         appointmentController = new AppointmentController(appointmentDao, customerDao, vehicleDao, technicianDao);
         serviceController = new ServiceController(serviceDao, technicianDao);
-        adminController = new AdminController();
-        reportController = new ReportController(this.salesService, this.inventoryService);
         this.userService = new UserService();
+        // Share this UserService with AdminController so role-permission edits
+        // take effect immediately instead of requiring a restart
+        adminController = new AdminController(this.userService);
+        reportController = new ReportController(this.salesService, this.inventoryService);
     }
     
     private MenuBar createMenuBar() {
@@ -927,6 +932,19 @@ public class MainView {
     }
     
     /**
+     * Check whether any secondary window (dialog, alert, etc.) is currently open.
+     * Auto-refresh uses this to avoid wiping screens while the user is mid-task.
+     */
+    public boolean isDialogOpen() {
+        for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
+            if (window instanceof javafx.stage.Stage && window != stage && window.isShowing()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Refresh only the currently active tab (better performance)
      */
     public void refreshCurrentTab() {
@@ -1253,7 +1271,8 @@ public class MainView {
         searchCustomerField.setPromptText("🔍 Search Customers...");
         searchCustomerField.setStyle("-fx-padding: 8 12; -fx-background-radius: 6px; -fx-border-color: #ced4da; -fx-border-radius: 6px; -fx-font-size: 14px;");
         searchCustomerField.setPrefWidth(200);
-        
+        this.customerSearchField = searchCustomerField;
+
         Button searchCustomerBtn = new Button("🔍 Search");
         searchCustomerBtn.setStyle("-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
 
@@ -1261,7 +1280,11 @@ public class MainView {
         chargePaymentBtn.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
         chargePaymentBtn.setDisable(true);
 
-        controls.getChildren().addAll(addCustomerBtn, editCustomerBtn, deleteCustomerBtn, chargePaymentBtn, searchCustomerField, searchCustomerBtn);
+        Button chargeHistoryBtn = new Button("📜 Charge History");
+        chargeHistoryBtn.setStyle("-fx-background-color: #6c757d; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 6px; -fx-cursor: hand;");
+        chargeHistoryBtn.setDisable(true);
+
+        controls.getChildren().addAll(addCustomerBtn, editCustomerBtn, deleteCustomerBtn, chargePaymentBtn, chargeHistoryBtn, searchCustomerField, searchCustomerBtn);
         headerSection.getChildren().addAll(headerTitle, controls);
         content.setTop(headerSection);
         // Enhanced main content area
@@ -1365,10 +1388,12 @@ public class MainView {
                 refreshVehicleTable(this.vehicleTable, vehicleDao, newSelection.getId());
                 addVehicleBtn.setDisable(false); editVehicleBtn.setDisable(false); deleteVehicleBtn.setDisable(false); serviceHistoryBtn.setDisable(false);
                 chargePaymentBtn.setDisable(newSelection.getChargeBalance().compareTo(java.math.BigDecimal.ZERO) <= 0);
+                chargeHistoryBtn.setDisable(false);
             } else {
                 this.vehicleTable.getItems().clear();
                 addVehicleBtn.setDisable(true); editVehicleBtn.setDisable(true); deleteVehicleBtn.setDisable(true); serviceHistoryBtn.setDisable(true);
                 chargePaymentBtn.setDisable(true);
+                chargeHistoryBtn.setDisable(true);
             }
         });
 
@@ -1380,6 +1405,12 @@ public class MainView {
             }
             showChargeAccountPaymentDialog(selected);
             refreshCustomerTable(this.customerTable, customerDao);
+        });
+        chargeHistoryBtn.setOnAction(e -> {
+            Customer selected = this.customerTable.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                showChargeHistoryDialog(selected);
+            }
         });
         addCustomerBtn.setOnAction(e -> {
             showAddCustomerDialog(); 
@@ -1745,6 +1776,79 @@ public class MainView {
                 showAlert("Invalid Payment", "Please enter a valid payment amount greater than $0.", Alert.AlertType.WARNING);
             }
         });
+    }
+
+    /**
+     * Dialog showing a customer's full store charge account activity:
+     * charges made against the account and payments made towards it.
+     */
+    private void showChargeHistoryDialog(Customer customer) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Charge Account History");
+        dialog.setHeaderText(customer.getFullName() + " - Store Charge Activity"
+                + String.format("   (Current Balance: $%.2f)", customer.getChargeBalance()));
+        dialog.initOwner(stage);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        SalesService.ChargeAccountActivity activity = salesService.getChargeAccountActivity(customer.getId());
+
+        // Merge charges and payments into one dated activity list
+        List<String[]> rows = new ArrayList<>();
+        for (com.tireshop.model.SalePayment charge : activity.charges) {
+            String invoice = charge.getSale() != null && charge.getSale().getInvoiceNumber() != null
+                    ? charge.getSale().getInvoiceNumber() : "?";
+            rows.add(new String[]{
+                    charge.getPaymentTimestamp() != null
+                            ? charge.getPaymentTimestamp().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "",
+                    "Charge - Invoice " + invoice,
+                    String.format("$%.2f", charge.getAmount()), ""});
+        }
+        for (com.tireshop.model.ChargeAccountPayment payment : activity.payments) {
+            String description = payment.getNotes() != null && !payment.getNotes().trim().isEmpty()
+                    ? payment.getNotes() : "Payment Received";
+            java.math.BigDecimal amount = payment.getAmount() != null ? payment.getAmount() : java.math.BigDecimal.ZERO;
+            String amountText = (amount.signum() >= 0 ? "-$" : "+$")
+                    + String.format("%.2f", amount.abs());
+            rows.add(new String[]{
+                    payment.getPaymentTimestamp() != null
+                            ? payment.getPaymentTimestamp().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "",
+                    description,
+                    amountText,
+                    payment.getBalanceAfter() != null ? String.format("$%.2f", payment.getBalanceAfter()) : ""});
+        }
+        rows.sort((a, b) -> b[0].compareTo(a[0]));
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(15));
+        content.setPrefWidth(560);
+        content.setPrefHeight(380);
+
+        if (rows.isEmpty()) {
+            Label emptyLabel = new Label("No store charge activity for this customer yet.");
+            emptyLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 13px;");
+            content.getChildren().add(emptyLabel);
+        } else {
+            TableView<String[]> table = new TableView<>();
+            TableColumn<String[], String> dateCol = new TableColumn<>("Date");
+            dateCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue()[0]));
+            dateCol.setPrefWidth(140);
+            TableColumn<String[], String> descCol = new TableColumn<>("Description");
+            descCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue()[1]));
+            descCol.setPrefWidth(220);
+            TableColumn<String[], String> amountCol = new TableColumn<>("Amount");
+            amountCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue()[2]));
+            amountCol.setPrefWidth(90);
+            TableColumn<String[], String> balCol = new TableColumn<>("Balance After");
+            balCol.setCellValueFactory(cd -> new SimpleStringProperty(cd.getValue()[3]));
+            balCol.setPrefWidth(100);
+            table.getColumns().addAll(dateCol, descCol, amountCol, balCol);
+            table.setItems(FXCollections.observableArrayList(rows));
+            table.setStyle("-fx-font-size: 12px;");
+            content.getChildren().add(table);
+        }
+
+        dialog.getDialogPane().setContent(content);
+        dialog.showAndWait();
     }
 
     public void showAddVehicleDialog(Customer customer) {
@@ -2370,8 +2474,30 @@ public class MainView {
         // Refresh the customer table in the customers tab if it exists
         if (customerTable != null) {
             CustomerDao customerDao = new CustomerDao(DatabaseManager.getSessionFactory());
-            List<Customer> customers = customerDao.findAll();
+
+            // Remember current selection so we can restore it after reload
+            Customer selected = customerTable.getSelectionModel().getSelectedItem();
+            Long selectedId = selected != null ? selected.getId() : null;
+
+            // Re-apply the active search filter instead of wiping it
+            String searchTerm = customerSearchField != null ? customerSearchField.getText() : null;
+            List<Customer> customers;
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                customers = customerDao.search(searchTerm.trim());
+            } else {
+                customers = customerDao.findAll();
+            }
             customerTable.setItems(FXCollections.observableArrayList(customers));
+
+            // Restore selection (the selection listener reloads vehicles + buttons)
+            if (selectedId != null) {
+                for (Customer c : customerTable.getItems()) {
+                    if (c.getId() != null && c.getId().equals(selectedId)) {
+                        customerTable.getSelectionModel().select(c);
+                        break;
+                    }
+                }
+            }
         }
     }
     
@@ -2395,9 +2521,14 @@ public class MainView {
      */
     public void refreshCustomerSection() {
         refreshCustomerData();
-        // Clear vehicle table since no specific customer is selected
+        // The selection listener keeps the vehicle table in sync; only clear it
+        // if no customer ended up selected after the refresh.
         if (vehicleTable != null) {
-            vehicleTable.getItems().clear();
+            Customer selected = customerTable != null
+                    ? customerTable.getSelectionModel().getSelectedItem() : null;
+            if (selected == null) {
+                vehicleTable.getItems().clear();
+            }
         }
     }
     
