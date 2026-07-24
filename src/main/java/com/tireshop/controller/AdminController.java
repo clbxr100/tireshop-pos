@@ -2481,7 +2481,10 @@ public class AdminController {
                                     com.tireshop.service.DailyReportService.KEY_RECIPIENT, ""));
                             statusLabel.setStyle("-fx-text-fill: #27ae60;");
                         } else {
-                            statusLabel.setText("⚠ Could not send. Check the owner email and SMTP settings below, then Save All Settings.");
+                            String reason = emailService.getLastError();
+                            statusLabel.setText(reason != null
+                                    ? "⚠ Send failed: " + reason
+                                    : "⚠ Could not send. Check the owner email and SMTP settings below, then Save All Settings.");
                             statusLabel.setStyle("-fx-text-fill: #c0392b;");
                         }
                     });
@@ -2654,7 +2657,14 @@ public class AdminController {
             settingsService.setSetting(com.tireshop.service.EmailService.KEY_SMTP_HOST, emailHostField.getText().trim());
             settingsService.setSetting(com.tireshop.service.EmailService.KEY_SMTP_PORT, emailPortField.getText().trim());
             settingsService.setSetting(com.tireshop.service.EmailService.KEY_SMTP_USERNAME, emailUsernameField.getText().trim());
-            settingsService.setSetting(com.tireshop.service.EmailService.KEY_SMTP_PASSWORD, emailPasswordField.getText());
+            // Gmail app passwords are shown as "xxxx xxxx xxxx xxxx" but must be used
+            // without spaces - strip whitespace so a spaced paste still works
+            String emailPassword = emailPasswordField.getText();
+            if (emailHostField.getText().toLowerCase().contains("gmail")
+                    || emailHostField.getText().trim().isEmpty()) {
+                emailPassword = emailPassword.replaceAll("\\s+", "");
+            }
+            settingsService.setSetting(com.tireshop.service.EmailService.KEY_SMTP_PASSWORD, emailPassword);
             settingsService.setSetting(com.tireshop.service.EmailService.KEY_FROM, emailFromField.getText().trim());
 
             settingsService.setTireApiLookupEnabled(tireApiLookupEnabledCheckBox.isSelected());

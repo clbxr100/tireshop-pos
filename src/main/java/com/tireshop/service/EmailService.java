@@ -30,6 +30,12 @@ public class EmailService {
 
     private final SettingsService settingsService;
     private Session mailSession;
+    private volatile String lastError;
+
+    /** Human-readable reason the last send failed, or null if it succeeded. */
+    public String getLastError() {
+        return lastError;
+    }
     
     public EmailService(SettingsService settingsService) {
         this.settingsService = settingsService;
@@ -124,11 +130,13 @@ public class EmailService {
      */
     public boolean sendReportEmail(String to, String subject, String body) {
         if (to == null || to.trim().isEmpty()) {
+            lastError = "No recipient - fill in the Owner Email field and save";
             LOGGER.warning("Cannot send report - no recipient email configured");
             return false;
         }
         String username = settingsService.getSetting("email.username", "");
         if (username.isEmpty()) {
+            lastError = "Email Username is empty - fill in the SMTP settings and save";
             LOGGER.warning("Cannot send report - email.username is not configured in Admin settings");
             return false;
         }
@@ -146,9 +154,16 @@ public class EmailService {
             
             Transport.send(message);
             LOGGER.info("Email sent successfully to: " + to);
+            lastError = null;
             return true;
-            
+
         } catch (MessagingException e) {
+            // Surface the root cause - auth failures bury the useful text in nested exceptions
+            Throwable root = e;
+            while (root.getCause() != null && root.getCause() != root) {
+                root = root.getCause();
+            }
+            lastError = root.getMessage();
             LOGGER.severe("Failed to send email: " + e.getMessage());
             return false;
         }
