@@ -33,6 +33,13 @@ public class DatabaseManager {
             String dbUrl = dbProps.getProperty("database.url", "jdbc:h2:./tireshop_db");
             String dbUsername = dbProps.getProperty("database.username", "sa");
             String dbPassword = dbProps.getProperty("database.password", "");
+
+            // Main-PC mode: host the H2 TCP server inside this app so client
+            // machines can share the database without a separate server process
+            String serverAutostart = dbProps.getProperty("database.server.autostart", "false");
+            if ("true".equalsIgnoreCase(serverAutostart.trim()) && "h2".equalsIgnoreCase(dbType)) {
+                startH2Server(dbProps.getProperty("database.server.port", "9092").trim());
+            }
             
             // Set the appropriate dialect based on database type
             switch (dbType.toLowerCase()) {
@@ -76,6 +83,23 @@ public class DatabaseManager {
         }
     }
     
+    /**
+     * Start an in-process H2 TCP server so other machines on the LAN can
+     * connect to this app's database (jdbc:h2:tcp://THIS_PC:port/./tireshop_db).
+     * The server serves databases relative to the app's working directory.
+     */
+    private static void startH2Server(String port) {
+        try {
+            org.h2.tools.Server server = org.h2.tools.Server.createTcpServer(
+                    "-tcp", "-tcpAllowOthers", "-tcpPort", port, "-baseDir", ".", "-ifNotExists");
+            server.start();
+            LOGGER.info("H2 TCP server started for client machines on port " + port);
+        } catch (Exception e) {
+            // Usually means the port is taken - another instance or a standalone H2 server
+            LOGGER.warning("Could not start H2 TCP server on port " + port + ": " + e.getMessage());
+        }
+    }
+
     private static Properties loadDatabaseProperties() {
         Properties props = new Properties();
         
@@ -136,6 +160,10 @@ public class DatabaseManager {
         
         // Synchronize prices between Product and Service tables
         synchronizePrices();
+
+        // One-time move of legacy tire prices (entered as cost) into purchasePrice
+        // with the tiered-markup sell price computed into price/sellingPrice
+        migrateTireCostPricing();
         
         // Initialize sample data if needed
         // initializeSampleData(); // DISABLED - No mock data
@@ -233,6 +261,52 @@ public class DatabaseManager {
         }
     }
     
+    /**
+     * Legacy tires were entered with the shop's cost in the price field.
+     * Move that value into purchasePrice and set price/sellingPrice to
+     * cost plus the tiered markup. Only touches tires that have no
+     * purchasePrice yet, so it is safe to run on every startup.
+     */
+    private static void migrateTireCostPricing() {
+        Session session = null;
+        Transaction transaction = null;
+        try {
+            session = sessionFactory.openSession();
+            transaction = session.beginTransaction();
+
+            java.util.List<com.tireshop.model.Product> tires = session.createQuery(
+                    "FROM Product WHERE category = 'Tire'"
+                            + " AND (purchasePrice IS NULL OR purchasePrice = 0)"
+                            + " AND sellingPrice > 0",
+                    com.tireshop.model.Product.class).getResultList();
+
+            for (com.tireshop.model.Product tire : tires) {
+                java.math.BigDecimal cost = tire.getSellingPrice();
+                tire.setPurchasePrice(cost);
+                tire.setPrice(TirePricing.calculateSellPrice(cost));
+                session.update(tire);
+            }
+
+            transaction.commit();
+            if (!tires.isEmpty()) {
+                LOGGER.info("Tire markup migration applied to " + tires.size() + " tires");
+            }
+        } catch (Exception e) {
+            if (transaction != null) {
+                try {
+                    transaction.rollback();
+                } catch (Exception re) {
+                    LOGGER.log(Level.WARNING, "Error rolling back tire markup migration", re);
+                }
+            }
+            LOGGER.log(Level.WARNING, "Tire markup migration failed", e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+    }
+
     /**
      * Initialize the database with sample data (for development/testing)
      */

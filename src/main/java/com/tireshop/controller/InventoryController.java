@@ -327,7 +327,14 @@ public class InventoryController {
             }
         });
         
-        TableColumn<Product, String> priceColumn = new TableColumn<>("Price");
+        TableColumn<Product, String> costColumn = new TableColumn<>("Tire Price");
+        costColumn.setCellValueFactory(cellData -> {
+            BigDecimal cost = cellData.getValue().getPurchasePrice();
+            return new SimpleStringProperty(cost != null ? "$" + cost : "");
+        });
+        costColumn.setPrefWidth(80);
+
+        TableColumn<Product, String> priceColumn = new TableColumn<>("Sell Price");
         priceColumn.setCellValueFactory(cellData -> {
             BigDecimal price = cellData.getValue().getSellingPrice();
             return new SimpleStringProperty(price != null ? "$" + price : "");
@@ -356,8 +363,8 @@ public class InventoryController {
         // Add columns to table
         productTable.getColumns().addAll(
             idColumn, nameColumn, manufacturerColumn, sizeColumn, typeColumn,
-            utqgColumn, speedRatingColumn, loadRatingColumn, ratingColumn, 
-            priceColumn, stockColumn
+            utqgColumn, speedRatingColumn, loadRatingColumn, ratingColumn,
+            costColumn, priceColumn, stockColumn
         );
         
         // Enable multi-selection for comparison
@@ -1512,6 +1519,22 @@ public class InventoryController {
     }
     
     /**
+     * Live-updates a label with the tiered-markup sell price as the cost is typed.
+     */
+    private void bindComputedSellPrice(TextField costField, Label sellPriceLabel) {
+        javafx.beans.value.ChangeListener<String> listener = (obs, oldVal, newVal) -> {
+            try {
+                sellPriceLabel.setText("$" + com.tireshop.util.TirePricing.calculateSellPrice(
+                        new BigDecimal(newVal.trim())));
+            } catch (Exception ex) {
+                sellPriceLabel.setText("-");
+            }
+        };
+        costField.textProperty().addListener(listener);
+        listener.changed(null, null, costField.getText() == null ? "" : costField.getText());
+    }
+
+    /**
      * Show dialog to adjust product price
      * @param product The product to adjust price for
      * @param owner The owner window
@@ -1572,7 +1595,11 @@ public class InventoryController {
         inventoryGrid.setVgap(10);
         inventoryGrid.setPadding(new javafx.geometry.Insets(20));
         
-        TextField priceField = new TextField(product.getPrice() != null ? product.getPrice().toString() : "0");
+        TextField priceField = new TextField(product.getPurchasePrice() != null
+                ? product.getPurchasePrice().toString()
+                : (product.getPrice() != null ? product.getPrice().toString() : "0"));
+        Label sellPriceLabel = new Label();
+        bindComputedSellPrice(priceField, sellPriceLabel);
         TextField quantityField = new TextField(String.valueOf(product.getQuantityInStock()));
         TextField reorderLevelField = new TextField(String.valueOf(product.getReorderLevel()));
         TextField skuField = new TextField(product.getSku() != null ? product.getSku() : "");
@@ -1580,8 +1607,10 @@ public class InventoryController {
         TextField locationField = new TextField(product.getLocation() != null ? product.getLocation() : "");
         
         row = 0;
-        inventoryGrid.add(new Label("Selling Price:"), 0, row);
+        inventoryGrid.add(new Label("Tire Price (Cost):"), 0, row);
         inventoryGrid.add(priceField, 1, row++);
+        inventoryGrid.add(new Label("Sell Price (auto):"), 0, row);
+        inventoryGrid.add(sellPriceLabel, 1, row++);
         inventoryGrid.add(new Label("Quantity in Stock:"), 0, row);
         inventoryGrid.add(quantityField, 1, row++);
         inventoryGrid.add(new Label("Reorder Level:"), 0, row);
@@ -1684,7 +1713,9 @@ public class InventoryController {
                     product.setCategory(categoryCombo.getValue());
                     product.setSize(sizeField.getText());
                     product.setModelNumber(modelNumberField.getText());
-                    product.setPrice(new BigDecimal(priceField.getText().isEmpty() ? "0" : priceField.getText()));
+                    BigDecimal cost = new BigDecimal(priceField.getText().isEmpty() ? "0" : priceField.getText());
+                    product.setPurchasePrice(cost);
+                    product.setPrice(com.tireshop.util.TirePricing.calculateSellPrice(cost));
                     product.setQuantityInStock(Integer.parseInt(quantityField.getText()));
                     product.setReorderLevel(Integer.parseInt(reorderLevelField.getText()));
                     product.setSku(skuField.getText());
@@ -1797,6 +1828,8 @@ public class InventoryController {
         
         TextField priceField = new TextField();
         priceField.setPromptText("0.00");
+        Label sellPriceLabel = new Label();
+        bindComputedSellPrice(priceField, sellPriceLabel);
         TextField quantityField = new TextField("0");
         TextField reorderLevelField = new TextField("5");
         TextField skuField = new TextField();
@@ -1805,8 +1838,10 @@ public class InventoryController {
         locationField.setPromptText("e.g., A1-B2");
         
         row = 0;
-        inventoryGrid.add(new Label("Selling Price:"), 0, row);
+        inventoryGrid.add(new Label("Tire Price (Cost):"), 0, row);
         inventoryGrid.add(priceField, 1, row++);
+        inventoryGrid.add(new Label("Sell Price (auto):"), 0, row);
+        inventoryGrid.add(sellPriceLabel, 1, row++);
         inventoryGrid.add(new Label("Quantity in Stock:"), 0, row);
         inventoryGrid.add(quantityField, 1, row++);
         inventoryGrid.add(new Label("Reorder Level:"), 0, row);
@@ -1914,7 +1949,9 @@ public class InventoryController {
                     product.setCategory(categoryCombo.getValue());
                     product.setSize(sizeField.getText());
                     product.setModelNumber(modelNumberField.getText());
-                    product.setPrice(new BigDecimal(priceField.getText().isEmpty() ? "0" : priceField.getText()));
+                    BigDecimal cost = new BigDecimal(priceField.getText().isEmpty() ? "0" : priceField.getText());
+                    product.setPurchasePrice(cost);
+                    product.setPrice(com.tireshop.util.TirePricing.calculateSellPrice(cost));
                     product.setQuantityInStock(Integer.parseInt(quantityField.getText()));
                     product.setReorderLevel(Integer.parseInt(reorderLevelField.getText()));
                     product.setSku(skuField.getText());
